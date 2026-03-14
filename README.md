@@ -26,7 +26,7 @@ Built on top of [zca-js](https://github.com/AKAspanion/zca-js), the unofficial Z
 
 ### Features
 
-- Login via QR code with cross-platform display (terminal ASCII + PNG file + base64 data URL)
+- Login via QR code with auto HTTP server (PNG in browser + inline terminal image + base64 data URL)
 - Multi-account management with per-account dedicated proxy (1:1 mapping)
 - Send text, images, files, contact cards, stickers, reactions
 - Send bank cards (55+ Vietnamese banks)
@@ -58,7 +58,7 @@ npx zalo-agent-cli login
 Or clone and link for development:
 
 ```bash
-git clone https://github.com/ChickenAI/zalo-agent-cli.git
+git clone https://github.com/PhucMPham/zalo-agent-cli.git
 cd zalo-agent-cli
 npm install
 npm link
@@ -72,7 +72,9 @@ npm link
 zalo-agent login
 ```
 
-A QR code will appear in your terminal. Scan it with the Zalo app on your phone. Credentials are auto-saved to `~/.zalo-agent-cli/`.
+A QR code PNG will be saved and a local HTTP server starts automatically. Open the URL shown in output (e.g. `http://your-ip:18927/qr`) in your browser, then scan with **Zalo app > QR Scanner**. Credentials are auto-saved to `~/.zalo-agent-cli/`.
+
+> **Important:** Use Zalo's built-in QR scanner (not regular phone camera). The QR expires in ~60 seconds.
 
 #### 2. Send a message
 
@@ -209,18 +211,18 @@ zalo-agent account switch 789012...
 
 ### Headless / VPS / CI Usage
 
-#### Option A: QR via SSH tunnel (`--qr-url`)
+#### Option A: QR via browser (recommended)
 
 ```bash
-# On VPS
-zalo-agent login --qr-url
-# Output: QR available at http://localhost:18927/qr
+# On VPS — QR HTTP server starts automatically
+zalo-agent login
+# Output: QR available at http://your-vps-ip:18927/qr
 
-# On local machine — open SSH tunnel
-ssh -L 18927:localhost:18927 user@your-vps
-
-# Open http://localhost:18927/qr in your browser, scan with phone
+# Open the URL in your browser, scan with Zalo app > QR Scanner
 ```
+
+> The server auto-detects your public IP and tries ports 18927, 8080, 3000, 9000.
+> Make sure at least one port is open in your firewall.
 
 #### Option B: Export/import credentials
 
@@ -309,7 +311,7 @@ This is an **unofficial** project and is **not affiliated with, endorsed by, or 
 
 ### Tính năng
 
-- Đăng nhập bằng mã QR hiển thị đa nền tảng (ASCII terminal + file PNG + base64)
+- Đăng nhập bằng mã QR qua HTTP server tự động (PNG trên browser + inline terminal + base64)
 - Quản lý đa tài khoản với proxy riêng biệt cho từng tài khoản (1:1)
 - Gửi tin nhắn, hình ảnh, file, danh thiếp, sticker, reaction
 - Gửi thẻ ngân hàng (55+ ngân hàng Việt Nam)
@@ -341,7 +343,7 @@ npx zalo-agent-cli login
 Hoặc clone để phát triển:
 
 ```bash
-git clone https://github.com/ChickenAI/zalo-agent-cli.git
+git clone https://github.com/PhucMPham/zalo-agent-cli.git
 cd zalo-agent-cli
 npm install
 npm link
@@ -355,7 +357,7 @@ npm link
 zalo-agent login
 ```
 
-Mã QR sẽ hiện trên terminal. Quét bằng app Zalo trên điện thoại. Thông tin đăng nhập tự động lưu tại `~/.zalo-agent-cli/`.
+HTTP server tự khởi động và hiện URL (ví dụ `http://ip:18927/qr`). Mở URL trên trình duyệt, quét bằng **Zalo app > Quét mã QR** (không dùng camera thường). Thông tin đăng nhập tự động lưu tại `~/.zalo-agent-cli/`.
 
 #### 2. Gửi tin nhắn
 
@@ -396,17 +398,18 @@ zalo-agent account switch <ID>
 
 ### Sử dụng trên VPS / Headless / CI
 
-#### Cách A: QR qua SSH tunnel
+#### Cách A: QR qua trình duyệt (khuyến nghị)
 
 ```bash
-# Trên VPS
-zalo-agent login --qr-url
+# Trên VPS — HTTP server tự động khởi động
+zalo-agent login
+# Output: QR available at http://ip-vps:18927/qr
 
-# Trên máy local — mở SSH tunnel
-ssh -L 18927:localhost:18927 user@vps-cua-ban
-
-# Mở http://localhost:18927/qr trên trình duyệt, quét bằng điện thoại
+# Mở URL trên trình duyệt, quét bằng Zalo app > Quét mã QR
 ```
+
+> Server tự detect IP public và thử port 18927, 8080, 3000, 9000.
+> Đảm bảo ít nhất 1 port mở trong firewall.
 
 #### Cách B: Xuất/nhập credentials
 
