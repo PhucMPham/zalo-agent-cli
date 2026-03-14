@@ -6,6 +6,7 @@
 
 import http from "http";
 import { readFileSync, existsSync } from "fs";
+import nodefetch from "node-fetch";
 import { info } from "./output.js";
 
 /**
@@ -89,10 +90,17 @@ setInterval(async()=>{
         server.listen(p, "0.0.0.0");
     }
 
-    server.on("listening", () => {
+    server.on("listening", async () => {
         const actualPort = server.address().port;
         info(`QR available at: http://localhost:${actualPort}/qr`);
-        info(`On VPS, open: http://<your-server-ip>:${actualPort}/qr`);
+        // Auto-detect public IP for VPS users
+        try {
+            const res = await nodefetch("https://ifconfig.me", { timeout: 3000 });
+            const ip = (await res.text()).trim();
+            if (ip) info(`On VPS, open: http://${ip}:${actualPort}/qr`);
+        } catch {
+            info(`On VPS, open: http://<your-server-ip>:${actualPort}/qr`);
+        }
     });
 
     server.on("error", (err) => {
