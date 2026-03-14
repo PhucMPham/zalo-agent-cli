@@ -4,7 +4,7 @@
   "description": "CLI tool for Zalo automation — multi-account, proxy support, bank transfers, QR payments",
   "type": "module",
   "bin": {
-    "zalo-agent": "./src/index.js"
+    "zalo-agent": "src/index.js"
   },
   "main": "./src/index.js",
   "files": [
