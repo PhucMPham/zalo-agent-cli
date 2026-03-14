@@ -211,10 +211,7 @@ export function registerMsgCommands(program) {
             "React to a message. Reaction codes: :> (haha), /-heart (heart), /-strong (like), :o (wow), :-(( (cry), :-h (angry)",
         )
         .option("-t, --type <n>", "Thread type: 0=User, 1=Group", "0")
-        .option(
-            "-c, --cli-msg-id <id>",
-            "Client message ID (required for reaction to appear, get from msg listen --json)",
-        )
+        .option("-c, --cli-msg-id <id>", "Client message ID (required for reaction to appear, get from listen --json)")
         .action(async (msgId, threadId, reaction, opts) => {
             try {
                 // zca-js addReaction(icon, dest) — dest needs msgId + cliMsgId
