@@ -3,12 +3,68 @@
  * Manages a single Zalo instance per process. Swap on account switch.
  */
 
+import fs from "fs";
 import { Zalo, LoginQRCallbackEventType } from "zca-js";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import nodefetch from "node-fetch";
 import { getActive } from "./accounts.js";
 import { loadCredentials } from "./credentials.js";
 import { info } from "../utils/output.js";
+
+/**
+ * Read image dimensions from file header bytes (PNG, JPEG, GIF).
+ * Returns { width, height, size } or null on failure.
+ */
+async function readImageMetadata(filePath) {
+    const stat = await fs.promises.stat(filePath);
+    const buf = Buffer.alloc(32);
+    const fh = await fs.promises.open(filePath, "r");
+    try {
+        await fh.read(buf, 0, 32, 0);
+    } finally {
+        await fh.close();
+    }
+
+    let width = 0;
+    let height = 0;
+
+    // PNG: bytes 0-3 = 0x89504E47, width at 16, height at 20 (big-endian)
+    if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
+        width = buf.readUInt32BE(16);
+        height = buf.readUInt32BE(20);
+    }
+    // GIF: "GIF87a" or "GIF89a", width at 6, height at 8 (little-endian)
+    else if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46) {
+        width = buf.readUInt16LE(6);
+        height = buf.readUInt16LE(8);
+    }
+    // JPEG: 0xFFD8
+    else if (buf[0] === 0xff && buf[1] === 0xd8) {
+        // Need to scan SOF markers for dimensions
+        const full = await fs.promises.readFile(filePath);
+        for (let i = 2; i < full.length - 9; ) {
+            if (full[i] !== 0xff) break;
+            const marker = full[i + 1];
+            // SOF0-SOF3, SOF5-SOF7, SOF9-SOF11, SOF13-SOF15
+            if (
+                (marker >= 0xc0 && marker <= 0xc3) ||
+                (marker >= 0xc5 && marker <= 0xc7) ||
+                (marker >= 0xc9 && marker <= 0xcb) ||
+                (marker >= 0xcd && marker <= 0xcf)
+            ) {
+                height = full.readUInt16BE(i + 5);
+                width = full.readUInt16BE(i + 7);
+                break;
+            }
+            // Skip segment
+            const segLen = full.readUInt16BE(i + 2);
+            i += 2 + segLen;
+        }
+    }
+
+    if (width === 0 || height === 0) return null;
+    return { width, height, size: stat.size };
+}
 
 let _api = null;
 let _ownId = null;
@@ -34,6 +90,7 @@ function createZalo(proxyUrl) {
     const opts = {
         // Suppress zca-js internal INFO logs when --json to keep stdout clean
         logging: !process.env.ZALO_JSON_MODE,
+        imageMetadataGetter: readImageMetadata,
     };
     if (proxyUrl) {
         opts.agent = new HttpsProxyAgent(proxyUrl);
