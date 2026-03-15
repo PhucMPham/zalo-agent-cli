@@ -319,6 +319,20 @@ export function registerMsgCommands(program) {
             }
         });
 
+    msg.command("send-link <threadId> <url>")
+        .description("Send a link with auto-preview (title, description, thumbnail)")
+        .option("-t, --type <n>", "Thread type: 0=User, 1=Group", "0")
+        .option("-m, --caption <text>", "Caption text")
+        .action(async (threadId, url, opts) => {
+            try {
+                info(`Sending link: ${url}`);
+                const result = await getApi().sendLink({ link: url, msg: opts.caption }, threadId, Number(opts.type));
+                output(result, program.opts().json, () => success(`Link sent to ${threadId}`));
+            } catch (e) {
+                error(`Send link failed: ${e.message}`);
+            }
+        });
+
     msg.command("send-video <threadId> <videoUrl>")
         .description("Send a video from URL")
         .requiredOption("--thumb <url>", "Thumbnail image URL")
