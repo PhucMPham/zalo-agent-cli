@@ -376,6 +376,44 @@ export function registerMsgCommands(program) {
             }
         });
 
+    msg.command("sticker-list <keyword>")
+        .description("Search stickers by keyword (returns sticker IDs)")
+        .action(async (keyword) => {
+            try {
+                const result = await getApi().getStickers(keyword);
+                output(result, program.opts().json, () => {
+                    const ids = Array.isArray(result) ? result : [];
+                    info(`${ids.length} sticker(s) found for "${keyword}"`);
+                    for (const id of ids) console.log(`  ${id}`);
+                });
+            } catch (e) {
+                error(`Sticker search failed: ${e.message}`);
+            }
+        });
+
+    msg.command("sticker-detail <stickerIds...>")
+        .description("Get sticker details by IDs")
+        .action(async (stickerIds) => {
+            try {
+                const ids = stickerIds.map(Number);
+                const result = await getApi().getStickersDetail(ids);
+                output(result, program.opts().json);
+            } catch (e) {
+                error(`Sticker detail failed: ${e.message}`);
+            }
+        });
+
+    msg.command("sticker-category <categoryId>")
+        .description("Get sticker category details")
+        .action(async (categoryId) => {
+            try {
+                const result = await getApi().getStickerCategoryDetail(Number(categoryId));
+                output(result, program.opts().json);
+            } catch (e) {
+                error(`Sticker category failed: ${e.message}`);
+            }
+        });
+
     msg.command("react <msgId> <threadId> <reaction>")
         .description(
             "React to a message. Reaction codes: :> (haha), /-heart (heart), /-strong (like), :o (wow), :-(( (cry), :-h (angry)",

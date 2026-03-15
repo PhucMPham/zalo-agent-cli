@@ -163,6 +163,92 @@ export function registerConvCommands(program) {
             }
         });
 
+    conv.command("hidden")
+        .description("List hidden conversations")
+        .action(async () => {
+            try {
+                const result = await getApi().getHiddenConversations();
+                output(result, program.opts().json);
+            } catch (e) {
+                error(`Get hidden conversations failed: ${e.message}`);
+            }
+        });
+
+    conv.command("hide <threadIds...>")
+        .description("Hide conversation(s)")
+        .option("-t, --type <n>", "Thread type: 0=User, 1=Group", "0")
+        .action(async (threadIds, opts) => {
+            try {
+                const result = await getApi().setHiddenConversations(true, threadIds, Number(opts.type));
+                output(result, program.opts().json, () => success(`Hidden ${threadIds.length} conversation(s)`));
+            } catch (e) {
+                error(`Hide failed: ${e.message}`);
+            }
+        });
+
+    conv.command("unhide <threadIds...>")
+        .description("Unhide conversation(s)")
+        .option("-t, --type <n>", "Thread type: 0=User, 1=Group", "0")
+        .action(async (threadIds, opts) => {
+            try {
+                const result = await getApi().setHiddenConversations(false, threadIds, Number(opts.type));
+                output(result, program.opts().json, () => success(`Unhidden ${threadIds.length} conversation(s)`));
+            } catch (e) {
+                error(`Unhide failed: ${e.message}`);
+            }
+        });
+
+    conv.command("hidden-pin <pin>")
+        .description("Set or update PIN for hidden conversations (4 digits)")
+        .action(async (pin) => {
+            try {
+                const result = await getApi().updateHiddenConversPin(pin);
+                output(result, program.opts().json, () => success("Hidden conversation PIN updated"));
+            } catch (e) {
+                error(`Update PIN failed: ${e.message}`);
+            }
+        });
+
+    conv.command("hidden-pin-reset")
+        .description("Reset hidden conversations PIN")
+        .action(async () => {
+            try {
+                const result = await getApi().resetHiddenConversPin();
+                output(result, program.opts().json, () => success("Hidden conversation PIN reset"));
+            } catch (e) {
+                error(`Reset PIN failed: ${e.message}`);
+            }
+        });
+
+    conv.command("auto-delete-status")
+        .description("View auto-delete chat settings")
+        .action(async () => {
+            try {
+                const result = await getApi().getAutoDeleteChat();
+                output(result, program.opts().json);
+            } catch (e) {
+                error(`Get auto-delete status failed: ${e.message}`);
+            }
+        });
+
+    conv.command("auto-delete <threadId> <ttl>")
+        .description("Set auto-delete for a conversation (off, 1d, 7d, 14d)")
+        .option("-t, --type <n>", "Thread type: 0=User, 1=Group", "0")
+        .action(async (threadId, ttl, opts) => {
+            try {
+                const ttlMap = { off: 0, "1d": 86400000, "7d": 604800000, "14d": 1209600000 };
+                const ttlValue = ttlMap[ttl];
+                if (ttlValue === undefined) {
+                    error(`Invalid TTL "${ttl}". Valid: off, 1d, 7d, 14d`);
+                    return;
+                }
+                const result = await getApi().updateAutoDeleteChat(ttlValue, threadId, Number(opts.type));
+                output(result, program.opts().json, () => success(`Auto-delete set to ${ttl} for ${threadId}`));
+            } catch (e) {
+                error(`Set auto-delete failed: ${e.message}`);
+            }
+        });
+
     conv.command("delete <threadId>")
         .description("Delete conversation history")
         .option("-t, --type <n>", "Thread type: 0=User, 1=Group", "0")

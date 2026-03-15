@@ -37,7 +37,8 @@ Built on top of [zca-js](https://github.com/AKAspanion/zca-js), the unofficial Z
 - Generate and send VietQR transfer images via qr.sepay.vn
 - Friend management (list, find, add, remove, block, alias, recommendations)
 - Group management (create, rename, members, settings, links, notes, invites)
-- Conversation management (mute, pin, archive, read/unread)
+- Conversation management (mute, pin, archive, hidden, auto-delete)
+- Auto-reply, quick messages, labels, Zalo Shop catalogs
 - Export/import credentials for headless server deployment
 - Local HTTP server for QR display on VPS (via SSH tunnel)
 - `--json` output on all commands for scripting and coding agents
@@ -170,6 +171,9 @@ zalo-agent whoami
 | `msg send-link <threadId> <url> [-m caption] [-t 0\|1]`                                          | Send link with auto-preview         |
 | `msg send-video <threadId> <videoUrl> --thumb <thumbUrl> [-m caption] [-d ms] [-W px] [-H px]`   | Send video from URL                 |
 | `msg sticker <threadId> <keyword> [-t 0\|1]`                                                     | Search and send sticker             |
+| `msg sticker-list <keyword>`                                                                     | Search stickers (returns IDs)       |
+| `msg sticker-detail <stickerIds...>`                                                             | Get sticker details by IDs          |
+| `msg sticker-category <categoryId>`                                                              | Get sticker category details        |
 | `msg react <msgId> <threadId> <emoji> [-t 0\|1]`                                                 | React to a message                  |
 | `msg delete <msgId> <threadId> [-t 0\|1]`                                                        | Delete a message                    |
 | `msg forward <msgId> <threadId> [-t 0\|1]`                                                       | Forward a message                   |
@@ -274,6 +278,13 @@ zalo-agent msg send <threadId> "Hello World" --style 0:5:bold 6:5:italic
 | `conv unmute <threadId> [-t 0\|1]`                        | Unmute                                   |
 | `conv read <threadId> [-t 0\|1]`                          | Mark as read                             |
 | `conv unread <threadId> [-t 0\|1]`                        | Mark as unread                           |
+| `conv hidden`                                             | List hidden conversations                |
+| `conv hide <threadIds...> [-t 0\|1]`                      | Hide conversation(s)                     |
+| `conv unhide <threadIds...> [-t 0\|1]`                    | Unhide conversation(s)                   |
+| `conv hidden-pin <pin>`                                   | Set PIN for hidden conversations         |
+| `conv hidden-pin-reset`                                   | Reset hidden conversations PIN           |
+| `conv auto-delete-status`                                 | View auto-delete chat settings           |
+| `conv auto-delete <threadId> <ttl> [-t 0\|1]`             | Set auto-delete (off, 1d, 7d, 14d)       |
 | `conv delete <threadId> [-t 0\|1]`                        | Delete conversation                      |
 
 #### Profile (`profile`)
@@ -284,6 +295,11 @@ zalo-agent msg send <threadId> "Hello World" --style 0:5:bold 6:5:italic
 | `profile avatar <imagePath>`                         | Change profile avatar                         |
 | `profile bio [text]`                                 | View or update bio/status                     |
 | `profile update [-n name] [-d YYYY-MM-DD] [-g 0\|1]` | Update name, birthday, gender                 |
+| `profile avatars [-c count] [-p page]`               | List avatar gallery                           |
+| `profile full-avatar <friendId>`                     | Get full-size avatar URL                      |
+| `profile avatar-url <friendIds...>`                  | Get avatar URLs for users                     |
+| `profile delete-avatar <photoIds...>`                | Delete avatar(s) from gallery                 |
+| `profile reuse-avatar <photoId>`                     | Reuse a previous avatar                       |
 | `profile settings`                                   | View privacy settings                         |
 | `profile set <setting> <value>`                      | Update a privacy setting                      |
 
@@ -350,6 +366,49 @@ zalo-agent reminder edit <reminderId> <groupId> "New title" -t 1 --time "2026-03
 # Remove a reminder
 zalo-agent reminder remove <reminderId> <groupId> -t 1
 ```
+
+#### Auto-Reply (`auto-reply`)
+
+| Command                                                                           | Description               |
+| --------------------------------------------------------------------------------- | ------------------------- |
+| `auto-reply list`                                                                 | List all auto-reply rules |
+| `auto-reply create <content> [--enable] [--start ms] [--end ms] [--scope n]`      | Create auto-reply         |
+| `auto-reply update <id> <content> [--enable] [--start ms] [--end ms] [--scope n]` | Update auto-reply         |
+| `auto-reply delete <id>`                                                          | Delete auto-reply         |
+
+**Scope:** `0`=all, `1`=friends, `2`=strangers
+
+#### Quick Messages (`quick-msg`)
+
+| Command                                       | Description               |
+| --------------------------------------------- | ------------------------- |
+| `quick-msg list`                              | List saved quick messages |
+| `quick-msg add <keyword> <title>`             | Add a quick message       |
+| `quick-msg update <itemId> <keyword> <title>` | Update a quick message    |
+| `quick-msg remove <itemIds...>`               | Remove quick message(s)   |
+
+#### Labels (`label`)
+
+| Command               | Description                      |
+| --------------------- | -------------------------------- |
+| `label list`          | List all conversation labels     |
+| `label update <json>` | Update labels (raw JSON payload) |
+
+#### Catalog / Shop (`catalog`)
+
+| Command                                                                                   | Description                        |
+| ----------------------------------------------------------------------------------------- | ---------------------------------- |
+| `catalog list [-l limit] [-p page]`                                                       | List all catalogs                  |
+| `catalog create <name>`                                                                   | Create a catalog                   |
+| `catalog rename <catalogId> <name>`                                                       | Rename a catalog                   |
+| `catalog delete <catalogId>`                                                              | Delete a catalog                   |
+| `catalog products <catalogId> [-l limit] [-p page]`                                       | List products in a catalog         |
+| `catalog add-product <catalogId> <name> <price> <desc> [--photos urls...]`                | Add product                        |
+| `catalog update-product <catalogId> <productId> <name> <price> <desc> [--photos urls...]` | Update product                     |
+| `catalog delete-product <catalogId> <productIds...>`                                      | Delete product(s)                  |
+| `catalog upload-photo <filePath>`                                                         | Upload product photo (returns URL) |
+
+> Catalog/Shop APIs require a Zalo Business account.
 
 #### Accounts (`account`)
 
@@ -523,7 +582,8 @@ This is an **unofficial** project and is **not affiliated with, endorsed by, or 
 - Tạo và gửi ảnh QR chuyển khoản qua qr.sepay.vn
 - Quản lý bạn bè (danh sách, tìm kiếm, thêm, xóa, chặn, biệt danh, gợi ý)
 - Quản lý nhóm (tạo, đổi tên, thành viên, cài đặt, link, ghi chú, lời mời)
-- Quản lý hội thoại (tắt thông báo, ghim, lưu trữ)
+- Quản lý hội thoại (tắt thông báo, ghim, lưu trữ, ẩn, tự xóa)
+- Trả lời tự động, tin nhắn nhanh, nhãn, cửa hàng Zalo Shop
 - Xuất/nhập credentials cho triển khai trên server
 - HTTP server local hiển thị QR cho VPS (qua SSH tunnel)
 - Output `--json` cho mọi lệnh, phục vụ scripting và coding agent

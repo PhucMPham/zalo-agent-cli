@@ -183,6 +183,70 @@ export function registerProfileCommands(program) {
         });
 
     profile
+        .command("avatars")
+        .description("List your avatar gallery")
+        .option("-c, --count <n>", "Page size", parseInt, 50)
+        .option("-p, --page <n>", "Page number", parseInt, 1)
+        .action(async (opts) => {
+            try {
+                const result = await getApi().getAvatarList(opts.count, opts.page);
+                output(result, program.opts().json);
+            } catch (e) {
+                error(`Get avatars failed: ${e.message}`);
+            }
+        });
+
+    profile
+        .command("full-avatar <friendId>")
+        .description("Get full-size avatar URL for a user")
+        .action(async (friendId) => {
+            try {
+                const result = await getApi().getFullAvatar(friendId);
+                output(result, program.opts().json, () => {
+                    info(`Avatar: ${result?.avatar || "?"}`);
+                });
+            } catch (e) {
+                error(`Get full avatar failed: ${e.message}`);
+            }
+        });
+
+    profile
+        .command("avatar-url <friendIds...>")
+        .description("Get avatar URLs for one or more users")
+        .action(async (friendIds) => {
+            try {
+                const result = await getApi().getAvatarUrlProfile(friendIds);
+                output(result, program.opts().json);
+            } catch (e) {
+                error(`Get avatar URLs failed: ${e.message}`);
+            }
+        });
+
+    profile
+        .command("delete-avatar <photoIds...>")
+        .description("Delete avatar(s) from your gallery")
+        .action(async (photoIds) => {
+            try {
+                const result = await getApi().deleteAvatar(photoIds);
+                output(result, program.opts().json, () => success(`Deleted ${photoIds.length} avatar(s)`));
+            } catch (e) {
+                error(`Delete avatar failed: ${e.message}`);
+            }
+        });
+
+    profile
+        .command("reuse-avatar <photoId>")
+        .description("Reuse a previous avatar from your gallery")
+        .action(async (photoId) => {
+            try {
+                const result = await getApi().reuseAvatar(photoId);
+                output(result, program.opts().json, () => success("Avatar reused"));
+            } catch (e) {
+                error(`Reuse avatar failed: ${e.message}`);
+            }
+        });
+
+    profile
         .command("set <setting> <value>")
         .description("Update a privacy setting (use 'profile settings' to see options)")
         .action(async (setting, value) => {
