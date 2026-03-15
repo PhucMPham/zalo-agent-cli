@@ -319,6 +319,20 @@ export function registerMsgCommands(program) {
             }
         });
 
+    msg.command("send-voice <threadId> <voiceUrl>")
+        .description("Send a voice message from URL")
+        .option("-t, --type <n>", "Thread type: 0=User, 1=Group", "0")
+        .option("--ttl <ms>", "Time to live in milliseconds", parseInt, 0)
+        .action(async (threadId, voiceUrl, opts) => {
+            try {
+                info(`Sending voice: ${voiceUrl}`);
+                const result = await getApi().sendVoice({ voiceUrl, ttl: opts.ttl }, threadId, Number(opts.type));
+                output(result, program.opts().json, () => success(`Voice sent to ${threadId}`));
+            } catch (e) {
+                error(`Send voice failed: ${e.message}`);
+            }
+        });
+
     msg.command("send-link <threadId> <url>")
         .description("Send a link with auto-preview (title, description, thumbnail)")
         .option("-t, --type <n>", "Thread type: 0=User, 1=Group", "0")

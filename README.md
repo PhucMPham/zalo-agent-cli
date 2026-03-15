@@ -35,8 +35,8 @@ Built on top of [zca-js](https://github.com/AKAspanion/zca-js), the unofficial Z
 - Send text, images, files, contact cards, stickers, reactions
 - Send bank cards (55+ Vietnamese banks)
 - Generate and send VietQR transfer images via qr.sepay.vn
-- Friend management (list, find, add, remove, block)
-- Group management (create, rename, add/remove members)
+- Friend management (list, find, add, remove, block, alias, recommendations)
+- Group management (create, rename, members, settings, links, notes, invites)
 - Conversation management (mute, pin, archive, read/unread)
 - Export/import credentials for headless server deployment
 - Local HTTP server for QR display on VPS (via SSH tunnel)
@@ -141,59 +141,62 @@ zalo-agent whoami
 
 #### Global Flags
 
-| Flag | Description |
-|------|-------------|
-| `--json` | Output all results as JSON |
-| `-V, --version` | Show version number |
-| `-h, --help` | Show help |
+| Flag            | Description                |
+| --------------- | -------------------------- |
+| `--json`        | Output all results as JSON |
+| `-V, --version` | Show version number        |
+| `-h, --help`    | Show help                  |
 
 #### Auth
 
-| Command | Description |
-|---------|-------------|
+| Command                                               | Description                               |
+| ----------------------------------------------------- | ----------------------------------------- |
 | `login [--proxy URL] [--credentials PATH] [--qr-url]` | Login via QR or from exported credentials |
-| `logout` | Clear current session |
-| `status` | Show login state |
-| `whoami` | Show current user profile |
+| `logout`                                              | Clear current session                     |
+| `status`                                              | Show login state                          |
+| `whoami`                                              | Show current user profile                 |
 
 #### Messages (`msg`)
 
-| Command | Description |
-|---------|-------------|
-| `msg send <threadId> <text> [-t 0\|1] [--md] [--style specs...]` | Send text message (with formatting) |
-| `msg send-image <threadId> <paths...> [-t 0\|1] [-m caption]` | Send images |
-| `msg send-file <threadId> <paths...> [-t 0\|1] [-m caption]` | Send files |
-| `msg send-card <threadId> <userId> [-t 0\|1] [--phone NUM]` | Send contact card |
-| `msg send-bank <threadId> <accountNum> -b BANK [-n name] [-t 0\|1]` | Send bank card |
-| `msg send-qr-transfer <threadId> <accountNum> -b BANK [-a amount] [-m content] [--template tpl]` | Send VietQR transfer image |
-| `msg send-link <threadId> <url> [-m caption] [-t 0\|1]` | Send link with auto-preview |
-| `msg send-video <threadId> <videoUrl> --thumb <thumbUrl> [-m caption] [-d ms] [-W px] [-H px]` | Send video from URL |
-| `msg sticker <threadId> <keyword> [-t 0\|1]` | Search and send sticker |
-| `msg react <msgId> <threadId> <emoji> [-t 0\|1]` | React to a message |
-| `msg delete <msgId> <threadId> [-t 0\|1]` | Delete a message |
-| `msg forward <msgId> <threadId> [-t 0\|1]` | Forward a message |
+| Command                                                                                          | Description                         |
+| ------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| `msg send <threadId> <text> [-t 0\|1] [--md] [--style specs...]`                                 | Send text message (with formatting) |
+| `msg send-image <threadId> <paths...> [-t 0\|1] [-m caption]`                                    | Send images                         |
+| `msg send-file <threadId> <paths...> [-t 0\|1] [-m caption]`                                     | Send files                          |
+| `msg send-card <threadId> <userId> [-t 0\|1] [--phone NUM]`                                      | Send contact card                   |
+| `msg send-bank <threadId> <accountNum> -b BANK [-n name] [-t 0\|1]`                              | Send bank card                      |
+| `msg send-qr-transfer <threadId> <accountNum> -b BANK [-a amount] [-m content] [--template tpl]` | Send VietQR transfer image          |
+| `msg send-voice <threadId> <voiceUrl> [-t 0\|1] [--ttl ms]`                                      | Send a voice message from URL       |
+| `msg send-link <threadId> <url> [-m caption] [-t 0\|1]`                                          | Send link with auto-preview         |
+| `msg send-video <threadId> <videoUrl> --thumb <thumbUrl> [-m caption] [-d ms] [-W px] [-H px]`   | Send video from URL                 |
+| `msg sticker <threadId> <keyword> [-t 0\|1]`                                                     | Search and send sticker             |
+| `msg react <msgId> <threadId> <emoji> [-t 0\|1]`                                                 | React to a message                  |
+| `msg delete <msgId> <threadId> [-t 0\|1]`                                                        | Delete a message                    |
+| `msg forward <msgId> <threadId> [-t 0\|1]`                                                       | Forward a message                   |
 
 > `-t 0` = User (default), `-t 1` = Group
 
 **Text formatting with `--md` (markdown mode):**
+
 ```bash
 zalo-agent msg send <threadId> "**Bold** *Italic* __Underline__ ~~Strike~~ {red:Red} {big:BIG}" --md
 ```
 
-| Syntax | Style |
-|--------|-------|
-| `**text**` | Bold |
-| `*text*` | Italic |
-| `__text__` | Underline |
-| `~~text~~` | Strikethrough |
-| `{red:text}` | Red text |
-| `{orange:text}` | Orange text |
-| `{yellow:text}` | Yellow text |
-| `{green:text}` | Green text |
-| `{big:text}` | Large font |
-| `{small:text}` | Small font |
+| Syntax          | Style         |
+| --------------- | ------------- |
+| `**text**`      | Bold          |
+| `*text*`        | Italic        |
+| `__text__`      | Underline     |
+| `~~text~~`      | Strikethrough |
+| `{red:text}`    | Red text      |
+| `{orange:text}` | Orange text   |
+| `{yellow:text}` | Yellow text   |
+| `{green:text}`  | Green text    |
+| `{big:text}`    | Large font    |
+| `{small:text}`  | Small font    |
 
 **Manual style with `--style` (for agents/automation):**
+
 ```bash
 # Format: start:len:style — style names: bold, italic, underline, strikethrough, red, orange, yellow, green, big, small
 zalo-agent msg send <threadId> "Hello World" --style 0:5:bold 6:5:italic
@@ -201,77 +204,107 @@ zalo-agent msg send <threadId> "Hello World" --style 0:5:bold 6:5:italic
 
 #### Friends (`friend`)
 
-| Command | Description |
-|---------|-------------|
-| `friend list` | List all friends |
-| `friend search <name>` | Search friends by name (get thread_id) |
-| `friend online` | List online friends |
-| `friend find <query>` | Find by phone or ID |
-| `friend info <userId>` | Get user profile |
-| `friend add <userId> [-m msg]` | Send friend request |
-| `friend accept <userId>` | Accept request |
-| `friend remove <userId>` | Remove friend |
-| `friend block <userId>` | Block user |
-| `friend unblock <userId>` | Unblock user |
-| `friend last-online <userId>` | Check last seen |
+| Command                                  | Description                                    |
+| ---------------------------------------- | ---------------------------------------------- |
+| `friend list`                            | List all friends                               |
+| `friend search <name>`                   | Search friends by name (get thread_id)         |
+| `friend online`                          | List online friends                            |
+| `friend find <query>`                    | Find by phone or ID                            |
+| `friend info <userId>`                   | Get user profile                               |
+| `friend add <userId> [-m msg]`           | Send friend request                            |
+| `friend accept <userId>`                 | Accept request                                 |
+| `friend remove <userId>`                 | Remove friend                                  |
+| `friend block <userId>`                  | Block user                                     |
+| `friend unblock <userId>`                | Unblock user                                   |
+| `friend last-online <userId>`            | Check last seen                                |
+| `friend find-username <username>`        | Find user by Zalo username                     |
+| `friend alias <friendId> <alias>`        | Set nickname for a friend                      |
+| `friend alias-list [-c count] [-p page]` | List all friend aliases                        |
+| `friend alias-remove <friendId>`         | Remove a friend's alias                        |
+| `friend reject <userId>`                 | Reject a friend request                        |
+| `friend undo-request <userId>`           | Cancel a sent friend request                   |
+| `friend sent-requests`                   | List sent friend requests                      |
+| `friend request-status <userId>`         | Check friend request status                    |
+| `friend close`                           | List close friends                             |
+| `friend recommendations`                 | Get friend recommendations & received requests |
+| `friend find-phones <phones...>`         | Find users by phone numbers                    |
 
 #### Groups (`group`)
 
-| Command | Description |
-|---------|-------------|
-| `group list` | List all groups |
-| `group create <name> <memberIds...>` | Create group |
-| `group history <groupId> [-n count]` | Get chat history (normalized JSON) |
-| `group info <groupId>` | Group details |
-| `group members <groupId>` | List members |
-| `group add-member <groupId> <userIds...>` | Add members |
-| `group remove-member <groupId> <userIds...>` | Remove members |
-| `group rename <groupId> <name>` | Rename |
-| `group upgrade-community <groupId>` | Upgrade group to Zalo Community |
-| `group leave <groupId>` | Leave group |
-| `group join <link>` | Join via invite link |
+| Command                                              | Description                             |
+| ---------------------------------------------------- | --------------------------------------- |
+| `group list`                                         | List all groups                         |
+| `group create <name> <memberIds...>`                 | Create group                            |
+| `group history <groupId> [-n count]`                 | Get chat history (normalized JSON)      |
+| `group info <groupId>`                               | Group details                           |
+| `group members <groupId>`                            | List members                            |
+| `group add-member <groupId> <userIds...>`            | Add members                             |
+| `group remove-member <groupId> <userIds...>`         | Remove members                          |
+| `group rename <groupId> <name>`                      | Rename                                  |
+| `group upgrade-community <groupId>`                  | Upgrade group to Zalo Community         |
+| `group leave <groupId>`                              | Leave group                             |
+| `group join <link>`                                  | Join via invite link                    |
+| `group members-info <userIds...>`                    | Get detailed info for members by IDs    |
+| `group settings <groupId> [flags]`                   | Update group settings (see flags below) |
+| `group pending <groupId>`                            | List pending member requests (admin)    |
+| `group approve <groupId> <userIds...>`               | Approve pending members (admin)         |
+| `group reject-member <groupId> <userIds...>`         | Reject pending members (admin)          |
+| `group enable-link <groupId>`                        | Enable group invite link                |
+| `group disable-link <groupId>`                       | Disable group invite link               |
+| `group link-info <groupId>`                          | Get group invite link details           |
+| `group blocked <groupId> [-c count] [-p page]`       | List blocked members                    |
+| `group note-create <groupId> <title> [--pin]`        | Create a note                           |
+| `group note-edit <groupId> <noteId> <title> [--pin]` | Edit a note                             |
+| `group invite-boxes`                                 | List received group invitations         |
+| `group join-invite <groupId>`                        | Accept a group invitation               |
+| `group delete-invite <groupIds...> [--block]`        | Delete invitations                      |
+| `group invite-to <userId> <groupIds...>`             | Invite user to groups                   |
+| `group disperse <groupId>`                           | Disperse group (irreversible!)          |
+
+**Group settings flags:** `--block-name`, `--sign-admin`, `--msg-history`, `--join-appr`, `--lock-post`, `--lock-poll`, `--lock-msg`, `--lock-view-member` (prefix with `--no-` to disable)
 
 #### Conversations (`conv`)
 
-| Command | Description |
-|---------|-------------|
+| Command                                                   | Description                              |
+| --------------------------------------------------------- | ---------------------------------------- |
 | `conv recent [-n limit] [--friends-only] [--groups-only]` | List recent conversations with thread_id |
-| `conv pinned` | List pinned |
-| `conv archived` | List archived |
-| `conv mute <threadId> [-t 0\|1] [-d secs]` | Mute (-1 = forever) |
-| `conv unmute <threadId> [-t 0\|1]` | Unmute |
-| `conv read <threadId> [-t 0\|1]` | Mark as read |
-| `conv unread <threadId> [-t 0\|1]` | Mark as unread |
-| `conv delete <threadId> [-t 0\|1]` | Delete conversation |
+| `conv pinned`                                             | List pinned                              |
+| `conv archived`                                           | List archived                            |
+| `conv mute <threadId> [-t 0\|1] [-d secs]`                | Mute (-1 = forever)                      |
+| `conv unmute <threadId> [-t 0\|1]`                        | Unmute                                   |
+| `conv read <threadId> [-t 0\|1]`                          | Mark as read                             |
+| `conv unread <threadId> [-t 0\|1]`                        | Mark as unread                           |
+| `conv delete <threadId> [-t 0\|1]`                        | Delete conversation                      |
 
 #### Profile (`profile`)
 
-| Command | Description |
-|---------|-------------|
-| `profile me` | Show your profile (name, phone, avatar, etc.) |
-| `profile avatar <imagePath>` | Change profile avatar |
-| `profile bio [text]` | View or update bio/status |
-| `profile update [-n name] [-d YYYY-MM-DD] [-g 0\|1]` | Update name, birthday, gender |
-| `profile settings` | View privacy settings |
-| `profile set <setting> <value>` | Update a privacy setting |
+| Command                                              | Description                                   |
+| ---------------------------------------------------- | --------------------------------------------- |
+| `profile me`                                         | Show your profile (name, phone, avatar, etc.) |
+| `profile avatar <imagePath>`                         | Change profile avatar                         |
+| `profile bio [text]`                                 | View or update bio/status                     |
+| `profile update [-n name] [-d YYYY-MM-DD] [-g 0\|1]` | Update name, birthday, gender                 |
+| `profile settings`                                   | View privacy settings                         |
+| `profile set <setting> <value>`                      | Update a privacy setting                      |
 
 **Privacy settings:** `online-status`, `seen-status`, `birthday`, `receive-msg`, `accept-call`, `add-by-phone`, `add-by-qr`, `add-by-group`, `recommend`
 
 #### Polls (`poll`)
 
-| Command | Description |
-|---------|-------------|
-| `poll create <groupId> <question> <options...>` | Create a poll (see flags below) |
-| `poll info <pollId>` | View poll details and vote results |
-| `poll vote <pollId> <optionIds...>` | Vote on a poll (option IDs from `poll info`) |
-| `poll unvote <pollId>` | Remove your vote |
-| `poll add-option <pollId> <options...> [--vote]` | Add new options to a poll |
-| `poll lock <pollId>` | Close a poll (no more votes) |
-| `poll share <pollId>` | Share a poll |
+| Command                                          | Description                                  |
+| ------------------------------------------------ | -------------------------------------------- |
+| `poll create <groupId> <question> <options...>`  | Create a poll (see flags below)              |
+| `poll info <pollId>`                             | View poll details and vote results           |
+| `poll vote <pollId> <optionIds...>`              | Vote on a poll (option IDs from `poll info`) |
+| `poll unvote <pollId>`                           | Remove your vote                             |
+| `poll add-option <pollId> <options...> [--vote]` | Add new options to a poll                    |
+| `poll lock <pollId>`                             | Close a poll (no more votes)                 |
+| `poll share <pollId>`                            | Share a poll                                 |
 
 **Poll create flags:** `--multi` (multiple choices), `--add-options` (members can add options), `--anonymous` (hide voters), `--hide-preview` (hide results until voted), `--expire <minutes>` (auto-close)
 
 **Example:**
+
 ```bash
 # Create a multi-choice poll with 3 options, auto-close after 60 minutes
 zalo-agent poll create <groupId> "Chọn ngày họp" "Thứ 2" "Thứ 4" "Thứ 6" --multi --expire 60
@@ -288,18 +321,19 @@ zalo-agent poll lock <pollId>
 
 #### Reminders (`reminder`)
 
-| Command | Description |
-|---------|-------------|
-| `reminder create <threadId> <title> [-t 0\|1] [--time "YYYY-MM-DD HH:mm"] [--repeat mode] [--emoji]` | Create a reminder |
-| `reminder list <threadId> [-t 0\|1] [-n count]` | List reminders |
-| `reminder info <reminderId>` | View reminder details (group only) |
-| `reminder responses <reminderId>` | View who accepted/rejected (group only) |
-| `reminder edit <reminderId> <threadId> <title> [-t 0\|1] [--time] [--repeat] [--emoji]` | Edit a reminder |
-| `reminder remove <reminderId> <threadId> [-t 0\|1]` | Remove a reminder |
+| Command                                                                                              | Description                             |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `reminder create <threadId> <title> [-t 0\|1] [--time "YYYY-MM-DD HH:mm"] [--repeat mode] [--emoji]` | Create a reminder                       |
+| `reminder list <threadId> [-t 0\|1] [-n count]`                                                      | List reminders                          |
+| `reminder info <reminderId>`                                                                         | View reminder details (group only)      |
+| `reminder responses <reminderId>`                                                                    | View who accepted/rejected (group only) |
+| `reminder edit <reminderId> <threadId> <title> [-t 0\|1] [--time] [--repeat] [--emoji]`              | Edit a reminder                         |
+| `reminder remove <reminderId> <threadId> [-t 0\|1]`                                                  | Remove a reminder                       |
 
 **Repeat modes:** `none`, `daily`, `weekly`, `monthly`
 
 **Example:**
+
 ```bash
 # Create a daily reminder in a group at 9:00 AM tomorrow
 zalo-agent reminder create <groupId> "Standup meeting" -t 1 --time "2026-03-16 09:00" --repeat daily
@@ -319,14 +353,14 @@ zalo-agent reminder remove <reminderId> <groupId> -t 1
 
 #### Accounts (`account`)
 
-| Command | Description |
-|---------|-------------|
-| `account list` | List all registered accounts |
+| Command                                         | Description                           |
+| ----------------------------------------------- | ------------------------------------- |
+| `account list`                                  | List all registered accounts          |
 | `account login [-p proxy] [-n name] [--qr-url]` | Login new account with optional proxy |
-| `account switch <ownerId>` | Switch active account |
-| `account remove <ownerId>` | Remove account + credentials |
-| `account info` | Show active account |
-| `account export [ownerId] [-o path]` | Export credentials for transfer |
+| `account switch <ownerId>`                      | Switch active account                 |
+| `account remove <ownerId>`                      | Remove account + credentials          |
+| `account info`                                  | Show active account                   |
+| `account export [ownerId] [-o path]`            | Export credentials for transfer       |
 
 #### Listener (`listen`)
 
@@ -372,6 +406,7 @@ zalo-agent account switch 789012...
 ```
 
 **Important notes:**
+
 - Zalo enforces 1 account = 1 device (IMEI). Each QR login auto-generates a unique IMEI.
 - Use 1 dedicated proxy per account — sharing proxies risks both accounts being flagged.
 - Supported proxy protocols: `http://`, `https://`, `socks5://`
@@ -486,8 +521,8 @@ This is an **unofficial** project and is **not affiliated with, endorsed by, or 
 - Gửi tin nhắn, hình ảnh, file, danh thiếp, sticker, reaction
 - Gửi thẻ ngân hàng (55+ ngân hàng Việt Nam)
 - Tạo và gửi ảnh QR chuyển khoản qua qr.sepay.vn
-- Quản lý bạn bè (danh sách, tìm kiếm, thêm, xóa, chặn)
-- Quản lý nhóm (tạo, đổi tên, thêm/xóa thành viên)
+- Quản lý bạn bè (danh sách, tìm kiếm, thêm, xóa, chặn, biệt danh, gợi ý)
+- Quản lý nhóm (tạo, đổi tên, thành viên, cài đặt, link, ghi chú, lời mời)
 - Quản lý hội thoại (tắt thông báo, ghim, lưu trữ)
 - Xuất/nhập credentials cho triển khai trên server
 - HTTP server local hiển thị QR cho VPS (qua SSH tunnel)
@@ -636,6 +671,7 @@ zalo-agent account switch <ID>
 ```
 
 **Lưu ý quan trọng:**
+
 - Zalo giới hạn 1 tài khoản = 1 thiết bị (IMEI). Mỗi lần quét QR tự tạo IMEI mới.
 - Dùng 1 proxy riêng cho mỗi tài khoản — dùng chung proxy có nguy cơ bị khóa cả 2.
 - Hỗ trợ: `http://`, `https://`, `socks5://`

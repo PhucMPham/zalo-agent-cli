@@ -199,4 +199,186 @@ export function registerFriendCommands(program) {
                 error(e.message);
             }
         });
+
+    friend
+        .command("find-username <username>")
+        .description("Find a user by their Zalo username")
+        .action(async (username) => {
+            try {
+                const result = await getApi().findUserByUsername(username);
+                output(result, program.opts().json, () => {
+                    if (!result) {
+                        error(`No user found for username "${username}"`);
+                        return;
+                    }
+                    info(`User ID: ${result.uid || "?"}`);
+                    info(`Name: ${result.displayName || result.zaloName || "?"}`);
+                });
+            } catch (e) {
+                error(`Find username failed: ${e.message}`);
+            }
+        });
+
+    friend
+        .command("alias <friendId> <alias>")
+        .description("Set a nickname (alias) for a friend")
+        .action(async (friendId, alias) => {
+            try {
+                const result = await getApi().changeFriendAlias(alias, friendId);
+                output(result, program.opts().json, () => success(`Alias set to "${alias}" for ${friendId}`));
+            } catch (e) {
+                error(`Set alias failed: ${e.message}`);
+            }
+        });
+
+    friend
+        .command("alias-list")
+        .description("List all friend aliases")
+        .option("-c, --count <n>", "Page size", parseInt, 100)
+        .option("-p, --page <n>", "Page number", parseInt, 1)
+        .action(async (opts) => {
+            try {
+                const result = await getApi().getAliasList(opts.count, opts.page);
+                output(result, program.opts().json, () => {
+                    const items = result?.items || [];
+                    info(`${items.length} alias(es)`);
+                    for (const item of items) {
+                        console.log(`  ${item.userId}  ${item.alias}`);
+                    }
+                });
+            } catch (e) {
+                error(`Get alias list failed: ${e.message}`);
+            }
+        });
+
+    friend
+        .command("alias-remove <friendId>")
+        .description("Remove a friend's alias")
+        .action(async (friendId) => {
+            try {
+                const result = await getApi().removeFriendAlias(friendId);
+                output(result, program.opts().json, () => success(`Alias removed for ${friendId}`));
+            } catch (e) {
+                error(`Remove alias failed: ${e.message}`);
+            }
+        });
+
+    friend
+        .command("reject <userId>")
+        .description("Reject a friend request")
+        .action(async (userId) => {
+            try {
+                const result = await getApi().rejectFriendRequest(userId);
+                output(result, program.opts().json, () => success(`Rejected friend request from ${userId}`));
+            } catch (e) {
+                error(`Reject friend request failed: ${e.message}`);
+            }
+        });
+
+    friend
+        .command("undo-request <userId>")
+        .description("Cancel a sent friend request")
+        .action(async (userId) => {
+            try {
+                const result = await getApi().undoFriendRequest(userId);
+                output(result, program.opts().json, () => success(`Friend request to ${userId} cancelled`));
+            } catch (e) {
+                error(`Undo friend request failed: ${e.message}`);
+            }
+        });
+
+    friend
+        .command("sent-requests")
+        .description("List all sent friend requests")
+        .action(async () => {
+            try {
+                const result = await getApi().getSentFriendRequest();
+                output(result, program.opts().json, () => {
+                    const entries = Object.entries(result || {});
+                    info(`${entries.length} sent request(s)`);
+                    for (const [uid, req] of entries) {
+                        console.log(`  ${uid}  ${req.displayName || req.zaloName || "?"}`);
+                    }
+                });
+            } catch (e) {
+                // Code 112 = no friend requests
+                if (String(e.message).includes("112")) {
+                    info("No sent friend requests");
+                } else {
+                    error(`Get sent requests failed: ${e.message}`);
+                }
+            }
+        });
+
+    friend
+        .command("request-status <userId>")
+        .description("Check friend request status with a user")
+        .action(async (userId) => {
+            try {
+                const result = await getApi().getFriendRequestStatus(userId);
+                output(result, program.opts().json, () => {
+                    info(`is_friend: ${result.is_friend}`);
+                    info(`is_requested: ${result.is_requested}`);
+                    info(`is_requesting: ${result.is_requesting}`);
+                });
+            } catch (e) {
+                error(`Get request status failed: ${e.message}`);
+            }
+        });
+
+    friend
+        .command("close")
+        .description("List close friends")
+        .action(async () => {
+            try {
+                const result = await getApi().getCloseFriends();
+                output(result, program.opts().json, () => {
+                    const friends = Array.isArray(result) ? result : [];
+                    info(`${friends.length} close friend(s)`);
+                    for (const f of friends) {
+                        console.log(`  ${f.userId || f.uid || "?"}  ${f.displayName || f.zaloName || "?"}`);
+                    }
+                });
+            } catch (e) {
+                error(`Get close friends failed: ${e.message}`);
+            }
+        });
+
+    friend
+        .command("recommendations")
+        .description("Get friend recommendations and received requests")
+        .action(async () => {
+            try {
+                const result = await getApi().getFriendRecommendations();
+                output(result, program.opts().json, () => {
+                    const items = result?.recommItems || [];
+                    info(`${items.length} recommendation(s)`);
+                    for (const item of items) {
+                        const d = item.dataInfo || {};
+                        const type = d.recommType === 2 ? "[request]" : "[suggest]";
+                        console.log(`  ${d.userId}  ${d.displayName || d.zaloName || "?"}  ${type}`);
+                    }
+                });
+            } catch (e) {
+                error(`Get recommendations failed: ${e.message}`);
+            }
+        });
+
+    friend
+        .command("find-phones <phones...>")
+        .description("Find users by phone numbers")
+        .action(async (phones) => {
+            try {
+                const result = await getApi().getMultiUsersByPhones(phones);
+                output(result, program.opts().json, () => {
+                    const entries = Object.entries(result || {});
+                    info(`${entries.length} user(s) found`);
+                    for (const [phone, user] of entries) {
+                        console.log(`  ${phone}  ${user.uid || "?"}  ${user.displayName || user.zaloName || "?"}`);
+                    }
+                });
+            } catch (e) {
+                error(`Find by phone failed: ${e.message}`);
+            }
+        });
 }
