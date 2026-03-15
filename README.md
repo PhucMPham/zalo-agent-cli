@@ -290,7 +290,9 @@ Transfer content: max 50 characters (VietQR/NAPAS spec).
 
 ### Disclaimer
 
-This is an **unofficial** project and is **not affiliated with, endorsed by, or connected to Zalo or VNG Corporation**. Use at your own risk. See [DISCLAIMER.md](DISCLAIMER.md).
+> ⚠️ **Warning:** This tool uses [zca-js](https://github.com/AKAspanion/zca-js), an **unofficial** Zalo API library. Zalo does not support this and **your account may be banned**. Use at your own risk.
+
+This is an **unofficial** project and is **not affiliated with, endorsed by, or connected to Zalo or VNG Corporation**. See [DISCLAIMER.md](DISCLAIMER.md) for full details.
 
 ### License
 
@@ -458,7 +460,9 @@ Nội dung chuyển khoản: tối đa 50 ký tự (theo chuẩn VietQR/NAPAS).
 
 ### Tuyên bố miễn trừ
 
-Đây là dự án **không chính thức** và **không liên kết với Zalo hay Tập đoàn VNG**. Sử dụng trên tinh thần tự chịu trách nhiệm. Xem [DISCLAIMER.md](DISCLAIMER.md).
+> ⚠️ **Cảnh báo:** Tool này sử dụng [zca-js](https://github.com/AKAspanion/zca-js) — thư viện gọi API Zalo **không chính thức**. Zalo không hỗ trợ và **tài khoản của bạn có thể bị khóa (ban)**. Dùng trên tinh thần tự chịu trách nhiệm.
+
+Đây là dự án **không chính thức** và **không liên kết với Zalo hay Tập đoàn VNG**. Xem [DISCLAIMER.md](DISCLAIMER.md) để biết chi tiết.
 
 ### Giấy phép
 
