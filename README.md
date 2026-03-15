@@ -166,6 +166,7 @@ zalo-agent whoami
 | `msg send-card <threadId> <userId> [-t 0\|1] [--phone NUM]` | Send contact card |
 | `msg send-bank <threadId> <accountNum> -b BANK [-n name] [-t 0\|1]` | Send bank card |
 | `msg send-qr-transfer <threadId> <accountNum> -b BANK [-a amount] [-m content] [--template tpl]` | Send VietQR transfer image |
+| `msg send-video <threadId> <videoUrl> --thumb <thumbUrl> [-m caption] [-d ms] [-W px] [-H px]` | Send video from URL |
 | `msg sticker <threadId> <keyword> [-t 0\|1]` | Search and send sticker |
 | `msg react <msgId> <threadId> <emoji> [-t 0\|1]` | React to a message |
 | `msg delete <msgId> <threadId> [-t 0\|1]` | Delete a message |

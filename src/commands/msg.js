@@ -217,6 +217,35 @@ export function registerMsgCommands(program) {
             }
         });
 
+    msg.command("send-video <threadId> <videoUrl>")
+        .description("Send a video from URL")
+        .requiredOption("--thumb <url>", "Thumbnail image URL")
+        .option("-t, --type <n>", "Thread type: 0=User, 1=Group", "0")
+        .option("-m, --caption <text>", "Caption text", "")
+        .option("-d, --duration <ms>", "Video duration in milliseconds", parseInt)
+        .option("-W, --width <px>", "Video width", parseInt, 1280)
+        .option("-H, --height <px>", "Video height", parseInt, 720)
+        .action(async (threadId, videoUrl, opts) => {
+            try {
+                info(`Sending video: ${videoUrl}`);
+                const result = await getApi().sendVideo(
+                    {
+                        videoUrl,
+                        thumbnailUrl: opts.thumb,
+                        msg: opts.caption,
+                        duration: opts.duration,
+                        width: opts.width,
+                        height: opts.height,
+                    },
+                    threadId,
+                    Number(opts.type),
+                );
+                output(result, program.opts().json, () => success(`Video sent to ${threadId}`));
+            } catch (e) {
+                error(`Send video failed: ${e.message}`);
+            }
+        });
+
     msg.command("react <msgId> <threadId> <reaction>")
         .description(
             "React to a message. Reaction codes: :> (haha), /-heart (heart), /-strong (like), :o (wow), :-(( (cry), :-h (angry)",
