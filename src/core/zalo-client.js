@@ -38,27 +38,33 @@ async function readImageMetadata(filePath) {
         width = buf.readUInt16LE(6);
         height = buf.readUInt16LE(8);
     }
-    // JPEG: 0xFFD8
+    // JPEG: 0xFFD8 — scan segments via file handle to avoid loading entire file
     else if (buf[0] === 0xff && buf[1] === 0xd8) {
-        // Need to scan SOF markers for dimensions
-        const full = await fs.promises.readFile(filePath);
-        for (let i = 2; i < full.length - 9; ) {
-            if (full[i] !== 0xff) break;
-            const marker = full[i + 1];
-            // SOF0-SOF3, SOF5-SOF7, SOF9-SOF11, SOF13-SOF15
-            if (
-                (marker >= 0xc0 && marker <= 0xc3) ||
-                (marker >= 0xc5 && marker <= 0xc7) ||
-                (marker >= 0xc9 && marker <= 0xcb) ||
-                (marker >= 0xcd && marker <= 0xcf)
-            ) {
-                height = full.readUInt16BE(i + 5);
-                width = full.readUInt16BE(i + 7);
-                break;
+        const jfh = await fs.promises.open(filePath, "r");
+        try {
+            const seg = Buffer.alloc(9); // enough for marker(2) + length(2) + precision(1) + h(2) + w(2)
+            let pos = 2; // skip SOI
+            while (pos < stat.size - 9) {
+                const { bytesRead } = await jfh.read(seg, 0, 4, pos);
+                if (bytesRead < 4 || seg[0] !== 0xff) break;
+                const marker = seg[1];
+                if (
+                    (marker >= 0xc0 && marker <= 0xc3) ||
+                    (marker >= 0xc5 && marker <= 0xc7) ||
+                    (marker >= 0xc9 && marker <= 0xcb) ||
+                    (marker >= 0xcd && marker <= 0xcf)
+                ) {
+                    // Read 5 more bytes: segment length(2) + precision(1) + height(2) + width(2)
+                    await jfh.read(seg, 0, 7, pos + 2);
+                    height = seg.readUInt16BE(3);
+                    width = seg.readUInt16BE(5);
+                    break;
+                }
+                const segLen = seg.readUInt16BE(2);
+                pos += 2 + segLen;
             }
-            // Skip segment
-            const segLen = full.readUInt16BE(i + 2);
-            i += 2 + segLen;
+        } finally {
+            await jfh.close();
         }
     }
 
