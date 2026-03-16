@@ -1,0 +1,9 @@
+#!/bin/bash
+# Mock npm for demo
+sleep 1
+echo ""
+echo "added 1 package in 2s"
+echo ""
+echo "  zalo-agent-cli@1.0.31"
+echo "  https://github.com/PhucMPham/zalo-agent-cli"
+echo ""

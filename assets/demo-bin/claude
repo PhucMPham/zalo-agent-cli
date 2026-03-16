@@ -1,0 +1,25 @@
+#!/bin/bash
+# Mock claude for demo — all data is fictional
+
+echo ""
+echo "╭──────────────────────────────────────────────────────╮"
+echo "│                                                      │"
+echo "│   Claude Code        ◐ zalo-agent skill active       │"
+echo "│                                                      │"
+echo "╰──────────────────────────────────────────────────────╯"
+echo ""
+echo -n "  > "
+read -r prompt
+echo ""
+echo "  I'll send the message to your Dev Team group."
+echo ""
+echo "  $ zalo-agent msg send 8391042567 \"Xin chào team! Đây là tin nhắn từ AI agent 🤖\" -t 1"
+echo ""
+sleep 1
+echo "  ✅ Message sent successfully!"
+echo "  📨 To: Nhóm Dev Team"
+echo "  💬 \"Xin chào team! Đây là tin nhắn từ AI agent 🤖\""
+echo ""
+sleep 2
+echo -n "  > "
+read -r prompt2

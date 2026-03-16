@@ -1,0 +1,59 @@
+#!/bin/bash
+# Mock zalo-agent for demo — all data is fictional
+
+case "$1" in
+  "login")
+    echo ""
+    echo "  🔐 Starting QR login..."
+    echo "  📡 QR server started at http://localhost:18927/qr"
+    echo "  🌐 Public URL: http://103.56.78.90:18927/qr"
+    echo ""
+    echo "  ⏳ Waiting for QR scan... (expires in 60s)"
+    echo "  📱 Open Zalo app → QR Scanner to scan"
+    sleep 3
+    echo ""
+    echo "  ✅ QR scanned! Logging in..."
+    sleep 1
+    echo "  ✅ Login successful!"
+    echo "  👤 Nguyen Van Demo (0912****56)"
+    echo "  💾 Credentials saved to ~/.zalo-agent-cli/"
+    echo ""
+    ;;
+  "status")
+    echo ""
+    echo "  ✅ Logged in"
+    echo "  👤 Nguyen Van Demo"
+    echo "  📱 IMEI: ****-****-****-3b7e"
+    echo "  🕐 Session: active (2h 15m)"
+    echo ""
+    ;;
+  "listen")
+    echo ""
+    echo "  🎧 Listening for events (message, friend)..."
+    echo "  🔗 Webhook: http://n8n.local/webhook/zalo"
+    echo "  ⚡ Filter: DM only | No self"
+    echo ""
+    sleep 2
+    echo "  📨 [15:42:01] Thanh: Anh ơi gửi báo giá qua Zalo nhé"
+    sleep 1.5
+    echo "  📨 [15:42:15] Linh: Ok em confirm đơn hàng #1234"
+    sleep 1.5
+    echo "  📨 [15:42:30] Hùng: @All meeting 3pm nha mọi người"
+    sleep 2
+    while true; do sleep 1; done
+    ;;
+  "msg")
+    echo ""
+    echo "  ✅ Message sent!"
+    echo "  📨 To: Nhóm Dev Team (threadId: 8391042567)"
+    echo "  💬 \"Xin chào team! Đây là tin nhắn từ AI agent 🤖\""
+    echo "  🆔 msgId: msg_k3x7p2m9"
+    echo "  🔑 cliMsgId: cli_q8n1v4w6"
+    echo ""
+    ;;
+  *)
+    echo ""
+    echo "  zalo-agent-cli v1.0.31"
+    echo ""
+    ;;
+esac

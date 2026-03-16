@@ -1,0 +1,11 @@
+#!/bin/bash
+# Mock clawhub for demo
+
+echo ""
+echo "  📦 Installing zalo-agent skill..."
+sleep 1
+echo "  ✅ Installed zalo-agent@1.1.0"
+echo "  📁 → ~/.openclaw/skills/zalo-agent/"
+echo ""
+echo "  Skill auto-activates when zalo-agent is on PATH."
+echo ""

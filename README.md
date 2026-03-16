@@ -1,8 +1,12 @@
 <p align="center">
-  <img src="assets/mascot.png" width="200" alt="zalo-agent-cli mascot" />
+  <img src="assets/mascot.png" width="120" alt="zalo-agent-cli mascot" />
 </p>
 
 # zalo-agent-cli
+
+<p align="center">
+  <img src="assets/demo.gif" alt="zalo-agent-cli demo" />
+</p>
 
 [![npm version](https://img.shields.io/npm/v/zalo-agent-cli.svg)](https://www.npmjs.com/package/zalo-agent-cli)
 [![npm downloads](https://img.shields.io/npm/dm/zalo-agent-cli.svg)](https://www.npmjs.com/package/zalo-agent-cli)
