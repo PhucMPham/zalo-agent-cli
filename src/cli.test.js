@@ -83,6 +83,7 @@ describe("CLI interface", () => {
         assert.match(out, /--proxy/);
         assert.match(out, /--credentials/);
         assert.match(out, /--qr-url/);
+        assert.match(out, /--qr-port/);
     });
 
     it("logout --help shows --purge", () => {

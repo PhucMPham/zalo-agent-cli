@@ -26,6 +26,7 @@ export function registerLoginCommands(program) {
         .option("-p, --proxy <url>", "Proxy URL (http/https/socks5://[user:pass@]host:port)")
         .option("-n, --name <label>", "Friendly name for this account", "")
         .option("--qr-url", "Start local HTTP server to view QR in browser (for VPS/headless)")
+        .option("-q, --qr-port <port>", "Port for QR HTTP server (default: 18927)", parseInt)
         .option("--credentials <path>", "Login from exported credentials file (skip QR)")
         .action(async (opts) => {
             // Credential-based login (headless/CI)
@@ -55,8 +56,9 @@ export function registerLoginCommands(program) {
             }
 
             // QR-based login
+            const jsonMode = program.opts().json;
             if (opts.proxy) info(`Using proxy: ${maskProxy(opts.proxy)}`);
-            info("Generating QR code... Scan with Zalo mobile app.");
+            if (!jsonMode) info("Generating QR code... Scan with Zalo mobile app.");
 
             let qrServer = null;
             try {
@@ -65,7 +67,7 @@ export function registerLoginCommands(program) {
 
                     // Always start HTTP server for QR scanning (no flag needed)
                     if (!qrServer) {
-                        qrServer = startQrServer(getQRPath());
+                        qrServer = startQrServer(getQRPath(), opts.qrPort || 18927);
                     }
                 });
 
@@ -79,9 +81,18 @@ export function registerLoginCommands(program) {
                 const creds = extractCredentials();
                 saveCredentials(ownId, creds);
                 addAccount(ownId, displayName, opts.proxy);
-                success(`Logged in as ${displayName} (${ownId})`);
+
+                if (jsonMode) {
+                    console.log(JSON.stringify({ event: "login_success", ownId, name: displayName }));
+                } else {
+                    success(`Logged in as ${displayName} (${ownId})`);
+                }
             } catch (e) {
-                error(`Login failed: ${e.message}`);
+                if (jsonMode) {
+                    console.log(JSON.stringify({ event: "login_error", message: e.message }));
+                } else {
+                    error(`Login failed: ${e.message}`);
+                }
                 process.exit(1);
             } finally {
                 if (qrServer) qrServer.close();

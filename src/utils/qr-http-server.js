@@ -124,14 +124,28 @@ setInterval(async()=>{
 
     server.on("listening", async () => {
         const actualPort = server.address().port;
-        info(`QR available at: http://localhost:${actualPort}/qr`);
+        const jsonMode = process.env.ZALO_JSON_MODE === "1";
+        let publicIp = null;
+
         // Auto-detect public IP for VPS users
         try {
             const res = await nodefetch("https://api.ipify.org", { timeout: 3000 });
-            const ip = (await res.text()).trim();
-            if (ip) info(`On VPS, open: http://${ip}:${actualPort}/qr`);
-        } catch {
-            info(`On VPS, open: http://<your-server-ip>:${actualPort}/qr`);
+            publicIp = (await res.text()).trim() || null;
+        } catch {}
+
+        if (jsonMode) {
+            console.log(JSON.stringify({
+                event: "qr_server",
+                port: actualPort,
+                localUrl: `http://localhost:${actualPort}/qr`,
+                publicUrl: publicIp ? `http://${publicIp}:${actualPort}/qr` : null,
+            }));
+        } else {
+            info(`QR available at: http://localhost:${actualPort}/qr`);
+            if (publicIp) info(`On VPS, open: http://${publicIp}:${actualPort}/qr`);
+            else info(`On VPS, open: http://<your-server-ip>:${actualPort}/qr`);
+            info(`If firewall blocks, run: sudo ufw allow ${actualPort}/tcp`);
+            info(`Or copy QR file: scp user@vps:~/.zalo-agent/qr.png ./qr.png`);
         }
     });
 
