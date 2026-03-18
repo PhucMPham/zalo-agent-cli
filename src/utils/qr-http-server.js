@@ -99,6 +99,20 @@ setInterval(async()=>{
 },2000);
 </script>
 </body></html>`);
+        } else if (req.url === "/qr.png") {
+            // Raw PNG image endpoint — for agents to send direct image link
+            if (!existsSync(qrImagePath)) {
+                res.writeHead(404, { "Content-Type": "text/plain" });
+                res.end("QR not generated yet");
+                return;
+            }
+            const img = readFileSync(qrImagePath);
+            res.writeHead(200, {
+                "Content-Type": "image/png",
+                "Content-Length": img.length,
+                "Cache-Control": "no-cache, no-store",
+            });
+            res.end(img);
         } else if (req.url === "/status") {
             // Login status endpoint for browser polling
             let loggedIn = false;
@@ -139,7 +153,9 @@ setInterval(async()=>{
                     event: "qr_server",
                     port: actualPort,
                     localUrl: `http://localhost:${actualPort}/qr`,
+                    imageUrl: `http://localhost:${actualPort}/qr.png`,
                     publicUrl: publicIp ? `http://${publicIp}:${actualPort}/qr` : null,
+                    publicImageUrl: publicIp ? `http://${publicIp}:${actualPort}/qr.png` : null,
                 }),
             );
         } else {
