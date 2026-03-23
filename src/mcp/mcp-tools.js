@@ -1,6 +1,6 @@
 /**
  * MCP tool registrations for Zalo message access and sending.
- * Registers 6 tools: zalo_get_messages, zalo_send_message, zalo_list_threads, zalo_search_threads, zalo_mark_read, zalo_view_media.
+ * Registers 7 tools: zalo_get_messages, zalo_get_history, zalo_send_message, zalo_list_threads, zalo_search_threads, zalo_mark_read, zalo_view_media.
  */
 
 import { z } from "zod";
@@ -190,6 +190,109 @@ export function registerTools(server, api, buffer, filter, config, nameCache) {
                 return ok({ success: true, discarded });
             } catch (e) {
                 console.error("[mcp-tools] zalo_mark_read error:", e.message);
+                return err(e.message);
+            }
+        },
+    );
+
+    // --- zalo_get_history ---
+    server.registerTool(
+        "zalo_get_history",
+        {
+            title: "Get Zalo Message History",
+            description:
+                "Fetch historical messages from a Zalo DM or group conversation (up to ~2 weeks). " +
+                "Unlike zalo_get_messages (which reads from the live buffer), this fetches older messages " +
+                "from the Zalo server. Use 'lastMsgId' cursor from previous response for pagination.",
+            inputSchema: z.object({
+                threadId: z.string().describe("Thread ID to fetch history from"),
+                threadType: z
+                    .number()
+                    .int()
+                    .min(0)
+                    .max(1)
+                    .default(THREAD_USER)
+                    .describe("Thread type: 0=DM(User), 1=Group"),
+                limit: z.number().int().min(1).max(200).default(50).describe("Max messages to fetch"),
+                lastMsgId: z
+                    .string()
+                    .optional()
+                    .nullable()
+                    .describe("Cursor: last message ID from previous fetch for pagination"),
+            }),
+        },
+        async ({ threadId, threadType, limit, lastMsgId }) => {
+            try {
+                const allMessages = [];
+                let cursor = lastMsgId || null;
+                let done = false;
+                const maxPages = Math.ceil(limit / 20);
+                let page = 0;
+
+                while (!done && allMessages.length < limit && page < maxPages) {
+                    page++;
+                    const pageMessages = await new Promise((resolve) => {
+                        const timer = setTimeout(() => resolve([]), 10000);
+
+                        const handler = (messages, type) => {
+                            clearTimeout(timer);
+                            api.listener.removeListener("old_messages", handler);
+                            resolve(messages);
+                        };
+
+                        api.listener.on("old_messages", handler);
+                        api.listener.requestOldMessages(threadType, cursor);
+                    });
+
+                    if (!pageMessages || pageMessages.length === 0) {
+                        done = true;
+                        break;
+                    }
+
+                    for (const msg of pageMessages) {
+                        if (allMessages.length >= limit) break;
+                        const rawContent = msg.data?.content;
+                        const isText = typeof rawContent === "string";
+                        allMessages.push({
+                            msgId: msg.data?.msgId,
+                            threadId: msg.threadId,
+                            senderId: msg.data?.uidFrom || null,
+                            senderName: msg.data?.dName || null,
+                            text: isText
+                                ? rawContent
+                                : rawContent?.title || rawContent?.href || `[${msg.data?.msgType || "attachment"}]`,
+                            timestamp: msg.data?.ts ? Number(msg.data.ts) * 1000 : null,
+                            type: isText ? "text" : msg.data?.msgType || "attachment",
+                        });
+                    }
+
+                    const lastMsg = pageMessages[pageMessages.length - 1];
+                    const nextId = lastMsg?.data?.actionId || lastMsg?.data?.msgId;
+                    if (!nextId || nextId === cursor) done = true;
+                    cursor = nextId;
+                }
+
+                // Sort oldest first
+                allMessages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+                // Enrich with thread name
+                if (nameCache) {
+                    const info = nameCache.get(threadId);
+                    if (info) {
+                        for (const msg of allMessages) msg.threadName = info.name;
+                    }
+                }
+
+                return ok({
+                    threadId,
+                    threadType: threadType === 0 ? "dm" : "group",
+                    count: allMessages.length,
+                    messages: allMessages,
+                    cursor: cursor,
+                    hasMore: !done,
+                });
+            } catch (e) {
+                console.error("[mcp-tools] zalo_get_history error:", e.message);
                 return err(e.message);
             }
         },
