@@ -8,6 +8,30 @@ import { getApi } from "../core/zalo-client.js";
 import { success, error, info, output } from "../utils/output.js";
 
 /**
+ * Extract readable text from non-string Zalo message content.
+ * Handles reply messages, bubble messages, recommendations, etc.
+ */
+function extractText(content, msgType) {
+    if (!content || typeof content !== "object") return `[${msgType || "attachment"}]`;
+    // Reply/quote messages: text in params.message or description
+    if (content.params?.message) return content.params.message;
+    if (content.description) return content.description;
+    // Standard fields
+    if (content.title) return content.title;
+    if (content.text) return content.text;
+    if (content.msg) return content.msg;
+    if (content.href) return content.href;
+    // Nested content (some bubble types)
+    if (content.content && typeof content.content === "string") return content.content;
+    // Stringify as last resort for debugging
+    try {
+        const str = JSON.stringify(content);
+        if (str.length < 200) return `[${msgType || "object"}: ${str}]`;
+    } catch {}
+    return `[${msgType || "attachment"}]`;
+}
+
+/**
  * TextStyle codes matching zca-js TextStyle enum.
  * Used for --style option and markdown parsing.
  */
@@ -543,7 +567,7 @@ export function registerMsgCommands(program) {
                             senderName: msg.data?.dName || null,
                             text: typeof msg.data?.content === "string"
                                 ? msg.data.content
-                                : msg.data?.content?.title || msg.data?.content?.href || `[${msg.data?.msgType || "attachment"}]`,
+                                : extractText(msg.data?.content, msg.data?.msgType),
                             timestamp: msg.data?.ts ? Number(msg.data.ts) * 1000 : null,
                             type: typeof msg.data?.content === "string" ? "text" : msg.data?.msgType || "attachment",
                         });

@@ -6,6 +6,23 @@
 import { z } from "zod";
 import { downloadMedia, openFile } from "./media-downloader.js";
 
+/** Extract readable text from non-string Zalo message content (replies, bubbles, etc.) */
+function extractMsgText(content, msgType) {
+    if (!content || typeof content !== "object") return `[${msgType || "attachment"}]`;
+    if (content.params?.message) return content.params.message;
+    if (content.description) return content.description;
+    if (content.title) return content.title;
+    if (content.text) return content.text;
+    if (content.msg) return content.msg;
+    if (content.href) return content.href;
+    if (content.content && typeof content.content === "string") return content.content;
+    try {
+        const str = JSON.stringify(content);
+        if (str.length < 200) return `[${msgType || "object"}: ${str}]`;
+    } catch {}
+    return `[${msgType || "attachment"}]`;
+}
+
 /** Thread type constants matching zca-js ThreadType enum */
 const THREAD_USER = 0;
 
@@ -260,7 +277,7 @@ export function registerTools(server, api, buffer, filter, config, nameCache) {
                             senderName: msg.data?.dName || null,
                             text: isText
                                 ? rawContent
-                                : rawContent?.title || rawContent?.href || `[${msg.data?.msgType || "attachment"}]`,
+                                : extractMsgText(rawContent, msg.data?.msgType),
                             timestamp: msg.data?.ts ? Number(msg.data.ts) * 1000 : null,
                             type: isText ? "text" : msg.data?.msgType || "attachment",
                         });
