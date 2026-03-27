@@ -8,6 +8,30 @@ import { getApi } from "../core/zalo-client.js";
 import { success, error, info, output } from "../utils/output.js";
 
 /**
+ * Extract readable text from non-string Zalo message content.
+ * Handles reply messages, bubble messages, recommendations, etc.
+ */
+function extractText(content, msgType) {
+    if (!content || typeof content !== "object") return `[${msgType || "attachment"}]`;
+    // Reply/quote messages: text in params.message or description
+    if (content.params?.message) return content.params.message;
+    if (content.description) return content.description;
+    // Standard fields
+    if (content.title) return content.title;
+    if (content.text) return content.text;
+    if (content.msg) return content.msg;
+    if (content.href) return content.href;
+    // Nested content (some bubble types)
+    if (content.content && typeof content.content === "string") return content.content;
+    // Stringify as last resort for debugging
+    try {
+        const str = JSON.stringify(content);
+        if (str.length < 200) return `[${msgType || "object"}: ${str}]`;
+    } catch {}
+    return `[${msgType || "attachment"}]`;
+}
+
+/**
  * TextStyle codes matching zca-js TextStyle enum.
  * Used for --style option and markdown parsing.
  */
@@ -480,6 +504,106 @@ export function registerMsgCommands(program) {
                 output(result, program.opts().json, () => success("Message forwarded"));
             } catch (e) {
                 error(e.message);
+            }
+        });
+
+    msg.command("history <threadId>")
+        .description("Fetch message history from a DM or group conversation via WebSocket")
+        .option("-t, --type <n>", "Thread type: 0=User(DM), 1=Group", "0")
+        .option("-n, --limit <n>", "Max messages to fetch (fetches in pages until limit)", "50")
+        .option("--timeout <ms>", "Timeout in milliseconds waiting for response", "15000")
+        .action(async (threadId, opts) => {
+            const jsonMode = program.opts().json;
+            const threadType = Number(opts.type);
+            const limit = Number(opts.limit);
+            const timeout = Number(opts.timeout);
+
+            try {
+                const api = getApi();
+                const allMessages = [];
+                let lastMsgId = null;
+                let done = false;
+
+                // Start listener (required for WebSocket requestOldMessages)
+                await new Promise((resolve, reject) => {
+                    const timer = setTimeout(() => reject(new Error("Listener connection timeout")), 10000);
+                    api.listener.on("connected", () => {
+                        clearTimeout(timer);
+                        resolve();
+                    });
+                    api.listener.on("error", (err) => {
+                        clearTimeout(timer);
+                        reject(err);
+                    });
+                    api.listener.start({ retryOnClose: false });
+                });
+
+                // Fetch pages until limit reached or no more messages
+                while (!done && allMessages.length < limit) {
+                    const pageMessages = await new Promise((resolve, reject) => {
+                        const timer = setTimeout(() => resolve([]), timeout);
+
+                        const handler = (messages, type) => {
+                            clearTimeout(timer);
+                            api.listener.removeListener("old_messages", handler);
+                            resolve(messages);
+                        };
+
+                        api.listener.on("old_messages", handler);
+                        api.listener.requestOldMessages(threadType, lastMsgId);
+                    });
+
+                    if (!pageMessages || pageMessages.length === 0) {
+                        done = true;
+                        break;
+                    }
+
+                    for (const msg of pageMessages) {
+                        if (allMessages.length >= limit) break;
+                        allMessages.push({
+                            msgId: msg.data?.msgId,
+                            threadId: msg.threadId,
+                            senderId: msg.data?.uidFrom || null,
+                            senderName: msg.data?.dName || null,
+                            text: typeof msg.data?.content === "string"
+                                ? msg.data.content
+                                : extractText(msg.data?.content, msg.data?.msgType),
+                            timestamp: msg.data?.ts ? Number(msg.data.ts) * 1000 : null,
+                            type: typeof msg.data?.content === "string" ? "text" : msg.data?.msgType || "attachment",
+                        });
+                    }
+
+                    // Use last message's actionId for pagination
+                    const lastMsg = pageMessages[pageMessages.length - 1];
+                    const nextId = lastMsg?.data?.actionId || lastMsg?.data?.msgId;
+                    if (!nextId || nextId === lastMsgId) {
+                        done = true;
+                    }
+                    lastMsgId = nextId;
+                }
+
+                // Sort by timestamp (oldest first)
+                allMessages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+                output(
+                    { threadId, threadType: threadType === 0 ? "dm" : "group", count: allMessages.length, messages: allMessages },
+                    jsonMode,
+                    () => {
+                        success(`${allMessages.length} message(s) from ${threadId}`);
+                        for (const m of allMessages) {
+                            const date = m.timestamp ? new Date(m.timestamp).toLocaleString() : "?";
+                            const name = m.senderName || m.senderId || "?";
+                            console.log(`  [${date}] ${name}: ${(m.text || "").slice(0, 200)}`);
+                        }
+                    },
+                );
+
+                // Clean up listener
+                api.listener.stop();
+                process.exit(0);
+            } catch (e) {
+                error(`History fetch failed: ${e.message}`);
+                process.exit(1);
             }
         });
 }
