@@ -8,24 +8,8 @@
 import { getApi, autoLogin, clearSession } from "../core/zalo-client.js";
 import { MessageBuffer } from "../mcp/message-buffer.js";
 import { ThreadFilter } from "../mcp/thread-filter.js";
-
-/** Extract readable text from non-string Zalo message content (replies, bubbles, etc.) */
-function extractMsgText(content, msgType) {
-    if (!content || typeof content !== "object") return `[${msgType || "attachment"}]`;
-    if (content.params?.message) return content.params.message;
-    if (content.description) return content.description;
-    if (content.title) return content.title;
-    if (content.text) return content.text;
-    if (content.msg) return content.msg;
-    if (content.href) return content.href;
-    if (content.content && typeof content.content === "string") return content.content;
-    try {
-        const str = JSON.stringify(content);
-        if (str.length < 200) return `[${msgType || "object"}: ${str}]`;
-    } catch {}
-    return `[${msgType || "attachment"}]`;
-}
 import { loadMCPConfig, parseDuration } from "../mcp/mcp-config.js";
+import { extractMessageText } from "../utils/extract-message-text.js";
 import { createMCPServer } from "../mcp/mcp-server.js";
 import { registerTools } from "../mcp/mcp-tools.js";
 import { createHTTPServer } from "../mcp/mcp-http-transport.js";
@@ -50,7 +34,7 @@ function normalizeMessage(msg) {
         threadType: msg.type === 0 ? "dm" : "group",
         senderId: msg.data.uidFrom || null,
         senderName: msg.data.dName || null,
-        text: isText ? rawContent : extractMsgText(rawContent, msg.data.msgType),
+        text: isText ? rawContent : extractMessageText(rawContent, msg.data.msgType),
         timestamp: Date.now(),
         type: isText ? "text" : msg.data.msgType || "attachment",
         attachment:

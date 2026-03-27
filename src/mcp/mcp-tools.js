@@ -5,23 +5,7 @@
 
 import { z } from "zod";
 import { downloadMedia, openFile } from "./media-downloader.js";
-
-/** Extract readable text from non-string Zalo message content (replies, bubbles, etc.) */
-function extractMsgText(content, msgType) {
-    if (!content || typeof content !== "object") return `[${msgType || "attachment"}]`;
-    if (content.params?.message) return content.params.message;
-    if (content.description) return content.description;
-    if (content.title) return content.title;
-    if (content.text) return content.text;
-    if (content.msg) return content.msg;
-    if (content.href) return content.href;
-    if (content.content && typeof content.content === "string") return content.content;
-    try {
-        const str = JSON.stringify(content);
-        if (str.length < 200) return `[${msgType || "object"}: ${str}]`;
-    } catch {}
-    return `[${msgType || "attachment"}]`;
-}
+import { extractMessageText } from "../utils/extract-message-text.js";
 
 /** Thread type constants matching zca-js ThreadType enum */
 const THREAD_USER = 0;
@@ -220,7 +204,8 @@ export function registerTools(server, api, buffer, filter, config, nameCache) {
             description:
                 "Fetch historical messages from a Zalo DM or group conversation (up to ~2 weeks). " +
                 "Unlike zalo_get_messages (which reads from the live buffer), this fetches older messages " +
-                "from the Zalo server. Use 'lastMsgId' cursor from previous response for pagination.",
+                "from the Zalo server. Use 'lastMsgId' cursor from previous response for pagination. " +
+                "WARNING: Large limits may consume significant memory/bandwidth. Start with a small limit and paginate.",
             inputSchema: z.object({
                 threadId: z.string().describe("Thread ID to fetch history from"),
                 threadType: z
@@ -249,13 +234,15 @@ export function registerTools(server, api, buffer, filter, config, nameCache) {
                 while (!done && allMessages.length < limit && page < maxPages) {
                     page++;
                     const pageMessages = await new Promise((resolve) => {
-                        const timer = setTimeout(() => resolve([]), 10000);
-
-                        const handler = (messages, type) => {
+                        const handler = (messages) => {
                             clearTimeout(timer);
                             api.listener.removeListener("old_messages", handler);
                             resolve(messages);
                         };
+                        const timer = setTimeout(() => {
+                            api.listener.removeListener("old_messages", handler);
+                            resolve([]);
+                        }, 10000);
 
                         api.listener.on("old_messages", handler);
                         api.listener.requestOldMessages(threadType, cursor);
@@ -268,6 +255,12 @@ export function registerTools(server, api, buffer, filter, config, nameCache) {
 
                     for (const msg of pageMessages) {
                         if (allMessages.length >= limit) break;
+                        // API returns messages globally — filter to requested thread
+                        // For DMs, conv.threadId = userId but msg.threadId = internal convo ID
+                        const msgThread = String(msg.threadId || "");
+                        const msgSender = String(msg.data?.uidFrom || "");
+                        const target = String(threadId);
+                        if (msgThread !== target && msgSender !== target) continue;
                         const rawContent = msg.data?.content;
                         const isText = typeof rawContent === "string";
                         allMessages.push({
@@ -277,8 +270,8 @@ export function registerTools(server, api, buffer, filter, config, nameCache) {
                             senderName: msg.data?.dName || null,
                             text: isText
                                 ? rawContent
-                                : extractMsgText(rawContent, msg.data?.msgType),
-                            timestamp: msg.data?.ts ? Number(msg.data.ts) * 1000 : null,
+                                : extractMessageText(rawContent, msg.data?.msgType),
+                            timestamp: msg.data?.ts ? Number(msg.data.ts) : null,
                             type: isText ? "text" : msg.data?.msgType || "attachment",
                         });
                     }
