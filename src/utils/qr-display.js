@@ -18,6 +18,7 @@ import { writeFileSync, mkdirSync } from "fs";
 import { platform } from "os";
 import { CONFIG_DIR } from "../core/credentials.js";
 import { info } from "./output.js";
+import QRCode from "qrcode";
 
 const QR_PATH = resolve(CONFIG_DIR, "qr.png");
 
@@ -30,6 +31,25 @@ function getOpenCommand() {
             return "start";
         default:
             return "xdg-open";
+    }
+}
+
+/** Render ASCII QR from data URL for terminals without inline image support. */
+export async function renderASCIIQR(dataUrl) {
+    try {
+        const terminalWidth = process.stdout.columns || 80;
+        const width = Math.min(terminalWidth - 4, 30);
+        const ascii = await QRCode.toString(dataUrl, {
+            width,
+            margin: 1,
+        });
+        // Check if we got meaningful output with QR patterns
+        if (!ascii || ascii.length < 10 || (!ascii.includes("█") && !ascii.includes("##"))) {
+            return null;
+        }
+        return ascii;
+    } catch {
+        return null;
     }
 }
 
@@ -77,11 +97,23 @@ export function displayQR(event) {
         const b64ForTerm = Buffer.from(imageB64, "base64").toString("base64");
         process.stdout.write(`\x1b]1337;File=inline=1;width=30;preserveAspectRatio=1:${b64ForTerm}\x07\n`);
 
+        // ASCII QR fallback for other terminals
+        const dataUrl = `data:image/png;base64,${imageB64}`;
+        renderASCIIQR(dataUrl)
+            .then((ascii) => {
+                if (ascii) {
+                    process.stdout.write("\n");
+                    process.stdout.write(ascii);
+                    process.stdout.write("\n");
+                }
+            })
+            .catch(() => {});
+
         const openCmd = getOpenCommand();
         info(`QR image saved: ${QR_PATH}`);
         info(`To open: ${openCmd} "${QR_PATH}"`);
-        info("Copy this URL and paste in any browser to view QR:");
-        console.log(`data:image/png;base64,${imageB64}`);
+        info("Or copy this URL and paste in any browser to view QR:");
+        console.log(dataUrl);
     }
 }
 

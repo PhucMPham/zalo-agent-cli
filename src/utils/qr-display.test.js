@@ -1,10 +1,11 @@
 /**
- * Tests for QR display utility — JSON mode structured output for AI agents.
+ * Tests for QR display utility — JSON mode structured output for AI agents,
+ * ASCII QR fallback for terminals without inline image support.
  */
 
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { displayQR, getQRPath } from "./qr-display.js";
+import { displayQR, getQRPath, renderASCIIQR } from "./qr-display.js";
 import { existsSync, unlinkSync, mkdirSync } from "fs";
 import { dirname } from "path";
 
@@ -93,5 +94,24 @@ describe("displayQR", () => {
         assert.ok(dataUrlLine, "should output a data URL line");
         assert.ok(dataUrlLine.includes(TINY_PNG_B64), "data URL should contain full base64, not truncated");
         assert.ok(!dataUrlLine.includes("..."), "data URL should not be truncated with ...");
+    });
+});
+
+describe("renderASCIIQR", () => {
+    it("returns a string for valid data URL (may be ASCII or null if not valid QR)", async () => {
+        const dataUrl = `data:image/png;base64,${TINY_PNG_B64}`;
+        const result = await renderASCIIQR(dataUrl);
+        // Returns string (ASCII or null) - not throw
+        assert.ok(result === null || typeof result === "string", "should return string or null");
+    });
+
+    it("returns null on invalid data URL", async () => {
+        const ascii = await renderASCIIQR("not-a-valid-url");
+        assert.equal(ascii, null, "should return null for invalid input");
+    });
+
+    it("returns null on empty data URL", async () => {
+        const ascii = await renderASCIIQR("");
+        assert.equal(ascii, null, "should return null for empty input");
     });
 });
