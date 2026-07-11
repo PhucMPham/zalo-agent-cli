@@ -44,7 +44,7 @@ import {
     getCategoryList,
     createOrder,
 } from "../core/oa-client.js";
-import { success, error, info, output } from "../utils/output.js";
+import { success, error, info, output, warning } from "../utils/output.js";
 
 export function registerOACommands(program) {
     const oa = program.command("oa").description("Zalo Official Account API v3.0 commands");
@@ -139,6 +139,7 @@ export function registerOACommands(program) {
                     res.end(`<h2>Login failed</h2><p>${e.message}</p>`);
                     error(e.message);
                 } finally {
+                    clearTimeout(loginTimeout);
                     server.close();
                 }
             });
@@ -149,8 +150,8 @@ export function registerOACommands(program) {
                 if (!json()) info(`Waiting for callback on ${bindHost}:${opts.port}...`);
             });
 
-            // Timeout after 2 minutes
-            setTimeout(() => {
+            // Timeout after 2 minutes — cleared once the callback completes
+            const loginTimeout = setTimeout(() => {
                 if (!json()) warning("Login timed out (2 min). Try again.");
                 server.close();
                 process.exit(1);
