@@ -11,7 +11,7 @@
  */
 
 import { createServer } from "node:http";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { success, error, info, warning, output } from "../utils/output.js";
 
 /** All supported OA webhook event types. */
@@ -28,9 +28,24 @@ const ALL_EVENTS = [
     "user_click_link",
 ];
 
-/** Verify MAC signature from Zalo OA using timing-safe comparison. */
+/**
+ * Verify MAC signature from Zalo OA using timing-safe comparison.
+ * Zalo signs webhooks as SHA256(app_id + raw_body + timestamp + OA_SECRET_KEY)
+ * where app_id/timestamp come from the payload itself and OA_SECRET_KEY is the
+ * per-OA key shown on the app's Webhook settings page (NOT the App Secret Key).
+ * Verified against live Zalo webhook traffic.
+ */
 function verifyMac(body, mac, secretKey) {
-    const calculated = createHmac("sha256", secretKey).update(body).digest("hex");
+    let appId, timestamp;
+    try {
+        ({ app_id: appId, timestamp } = JSON.parse(body));
+    } catch {
+        return false;
+    }
+    if (!appId || !timestamp) return false;
+    const calculated = createHash("sha256")
+        .update(appId + body + timestamp + secretKey)
+        .digest("hex");
     if (mac.length !== calculated.length) return false;
     return timingSafeEqual(Buffer.from(mac), Buffer.from(calculated));
 }
@@ -40,7 +55,7 @@ export function registerOAListenCommand(oaCommand, program) {
         .command("listen")
         .description("Start webhook listener for OA events (follow, messages, clicks, etc.)")
         .option("-p, --port <port>", "Listen port", "3000")
-        .option("-s, --secret <key>", "OA Secret Key for MAC verification (from developers.zalo.me)")
+        .option("-s, --secret <key>", "OA Secret Key for MAC verification (Webhook settings page — NOT the App Secret Key)")
         .option("--no-verify", "Skip MAC verification (not recommended)")
         .option("-e, --events <list>", `Comma-separated event filter: ${ALL_EVENTS.join(",")}`, "all")
         .option("--path <path>", "Webhook URL path", "/webhook")
