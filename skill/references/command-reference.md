@@ -35,6 +35,7 @@
 | `delete <msgId> <id> [-t]` | Delete (self only) |
 | `undo <msgId> <id> -c <cliMsgId> [-t]` | Recall both sides |
 | `forward <msgId> <id> [-t]` | Forward message |
+| `history <id> [-t 0\|1] [-n limit] [--timeout ms]` | Read recent message history (DM or group) via fresh WebSocket |
 
 ## Friends — `friend`
 | Command | Description |
