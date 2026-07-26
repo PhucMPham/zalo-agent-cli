@@ -25,6 +25,27 @@ All notable changes to this project will be documented in this file.
 
 - `oa upload image` / `oa upload file` print the follow-up command to send the uploaded media.
 
+## [1.7.0] - 2026-07-26
+
+### Added
+
+- **`msg history` command** — read a DM's or group's recent message history from the Zalo server (`zalo-agent msg history <id> -t 1 -n 50`).
+- **MCP `zalo_get_history`** — server-backed conversation history, seeded from Zalo's backfill at each (re)connect and growing with live messages. Supports `senderId` and `since`/`until` (date-range) filters; every message includes `replyTo` (who/what it replies to) and `mentions`.
+- **MCP `zalo_search_history`** — search captured history across all threads (or one) by sender and/or date range: "all messages from person X", "everything between two dates".
+- **MCP setup docs** for both Claude Code and Claude Desktop in the README (including the nvm/PATH gotcha and the one-session-per-account caveat), plus full skill docs for all 8 MCP tools.
+
+### Fixed
+
+- **`zalo_get_history` returned empty over the persistent MCP server** — Zalo only replays old messages during a connection's initial sync window, so the on-demand `requestOldMessages` call timed out. History is now captured into a store at connect time and served from there.
+- **Reconnect eviction loop** — when a second Zalo web session evicts this one (a plain code-1000 close, not the 3000 duplicate frame), the listener now backs off exponentially (5s → 5 min) instead of re-logging in every 5s, with a one-time multi-session warning.
+- **Backfill dropped on reconnect** — a reconnect mid-backfill no longer skips the new connection's sync window (generation-based supersede).
+- **stdio MCP transport corruption** — status output routed to stderr; `account list`'s empty-state now prints to stdout (data channel).
+
+### Changed
+
+- Message normalizers extracted into a testable `message-normalize.js` module; broader unit-test coverage for the history store, reconnect backoff, time parsing, and the zca-js field mappings.
+
+
 ## [1.6.1] - 2026-03-27
 
 ### Security
