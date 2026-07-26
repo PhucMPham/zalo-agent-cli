@@ -52,6 +52,7 @@ Thêm vào cấu hình MCP client:
 Lấy tin nhắn từ buffer, hỗ trợ cursor để đọc tăng dần.
 
 **Tham số:**
+
 | Tên | Kiểu | Mô tả |
 |-----|------|--------|
 | `cursor` | string (tuỳ chọn) | Cursor từ lần gọi trước — chỉ lấy tin mới hơn |
@@ -75,6 +76,7 @@ Lấy tin nhắn từ buffer, hỗ trợ cursor để đọc tăng dần.
 Đọc lịch sử tin nhắn cũ của một DM/nhóm. Khác với `zalo_get_messages` (đọc buffer live), tool này phục vụ từ lịch sử mà server đã thu thập: nạp từ backfill của Zalo mỗi lần server (re)connect (cửa sổ ~2 tuần) và lớn dần theo tin mới. Trả về cũ→mới.
 
 **Tham số:**
+
 | Tên | Kiểu | Mô tả |
 |-----|------|--------|
 | `threadId` | string | ID của DM hoặc nhóm |
@@ -103,6 +105,7 @@ Lưu ý: kho lưu trữ cũ hơn cửa sổ replay của Zalo không thể lấy
 Gửi tin nhắn văn bản đến một thread.
 
 **Tham số:**
+
 | Tên | Kiểu | Mô tả |
 |-----|------|--------|
 | `threadId` | string | ID của người dùng hoặc nhóm |
@@ -137,6 +140,7 @@ Liệt kê các thread đang hoạt động kèm số tin chưa đọc.
 Tìm thread (nhóm/DM) theo tên. Khớp mờ, không phân biệt hoa thường và dấu tiếng Việt. Dùng để lấy `threadId` từ tên rồi truyền vào `zalo_get_history`.
 
 **Tham số:**
+
 | Tên | Kiểu | Mô tả |
 |-----|------|--------|
 | `query` | string | Từ khoá tìm kiếm |
@@ -149,6 +153,7 @@ Tìm thread (nhóm/DM) theo tên. Khớp mờ, không phân biệt hoa thường
 Đánh dấu đã đọc — xoá tin khỏi buffer đến cursor chỉ định.
 
 **Tham số:**
+
 | Tên | Kiểu | Mô tả |
 |-----|------|--------|
 | `cursor` | string | Cursor trả về từ `zalo_get_messages` |
@@ -160,6 +165,7 @@ Tìm thread (nhóm/DM) theo tên. Khớp mờ, không phân biệt hoa thường
 Mở file media (ảnh/âm thanh/video) đã nhận bằng trình xem hệ thống. Media được tự tải khi nhận, sắp theo thư mục thread.
 
 **Tham số:**
+
 | Tên | Kiểu | Mô tả |
 |-----|------|--------|
 | `messageId` | string | ID tin nhắn có đính kèm media (từ `zalo_get_messages`) |

@@ -93,7 +93,7 @@ function toHistoryMessage(msg) {
         senderId: msg.data?.uidFrom || null,
         senderName: msg.data?.dName || null,
         text,
-        timestamp: msg.data?.ts ? Number(msg.data.ts) : Date.now(),
+        timestamp: msg.data?.ts !== null && msg.data?.ts !== undefined ? Number(msg.data.ts) : Date.now(),
         type,
     };
 }
@@ -165,7 +165,7 @@ export function registerMCPCommands(program) {
 
             let reconnectCount = 0;
             let shuttingDown = false;
-            let backfilling = false;
+            let backfillGeneration = 0; // bumped each connect; older in-flight backfills bail when superseded
             let lastConnectedAt = 0; // ms timestamp of the last successful connect (0 = not connected)
             let rapidCloses = 0; // consecutive closes that happened before the connection was stable
             let warnedMultiSession = false; // one-shot guard for the multi-session warning
@@ -178,12 +178,14 @@ export function registerMCPCommands(program) {
              * right after "connected" (not lazily on demand — that returns empty on a live socket).
              * @param {object} api - zca-js API instance
              * @param {number} threadType - 0=User(DM), 1=Group
+             * @param {number} gen - Backfill generation; the run bails if a newer connect supersedes it
              * @returns {Promise<number>} Count of messages ingested
              */
-            async function backfillHistory(api, threadType) {
+            async function backfillHistory(api, threadType, gen) {
                 let cursor = null;
                 let ingested = 0;
                 for (let page = 0; page < backfillPages; page++) {
+                    if (gen !== backfillGeneration) break; // superseded by a newer connect
                     const batch = await new Promise((resolve) => {
                         const handler = (messages, type) => {
                             if (type !== threadType) return; // wait for our thread type
@@ -205,6 +207,7 @@ export function registerMCPCommands(program) {
                         }
                     });
 
+                    if (gen !== backfillGeneration) break; // superseded while awaiting this page
                     if (batch.length === 0) break;
 
                     // Backfill batches span all threads of this type — group by threadId.
@@ -229,23 +232,26 @@ export function registerMCPCommands(program) {
 
             /**
              * Seed the history store from the backfill right after (re)connect.
-             * Runs DM then Group sequentially to avoid old_messages cross-talk. Guarded
-             * against overlapping runs; failures are non-fatal.
+             *
+             * Each connect supersedes any older in-flight backfill (which may still be looping
+             * against a now-dead socket): we bump the generation and start a fresh run immediately,
+             * so the new connection's sync window — the only time Zalo replays old messages — is
+             * never skipped. The stale run bails on its next generation check.
+             * Runs DM then Group sequentially to avoid old_messages cross-talk; failures are non-fatal.
              * @param {object} api - zca-js API instance
              */
             async function primeHistoryOnConnect(api) {
-                if (backfilling) return;
-                backfilling = true;
+                const gen = ++backfillGeneration;
                 try {
-                    const dm = await backfillHistory(api, 0);
-                    const group = await backfillHistory(api, 1);
-                    console.error(
-                        `[mcp] History backfill: ${dm} DM + ${group} group message(s) across ${historyStore.threadIds().length} thread(s)`,
-                    );
+                    const dm = await backfillHistory(api, 0, gen);
+                    const group = await backfillHistory(api, 1, gen);
+                    if (gen === backfillGeneration) {
+                        console.error(
+                            `[mcp] History backfill: ${dm} DM + ${group} group message(s) across ${historyStore.threadIds().length} thread(s)`,
+                        );
+                    }
                 } catch (e) {
                     console.error("[mcp] History backfill failed (non-fatal):", e.message);
-                } finally {
-                    backfilling = false;
                 }
             }
 
