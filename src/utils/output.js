@@ -15,7 +15,7 @@ export function output(data, jsonMode, humanFormatter) {
     }
 }
 
-export const success = (msg) => console.log(chalk.green("  ✓ " + msg));
-export const error = (msg) => console.log(chalk.red("  ✗ " + msg));
-export const info = (msg) => console.log(chalk.cyan("  ● " + msg));
-export const warning = (msg) => console.log(chalk.yellow("  ⚠ " + msg));
+export const success = (msg) => console.error(chalk.green("  ✓ " + msg));
+export const error = (msg) => console.error(chalk.red("  ✗ " + msg));
+export const info = (msg) => console.error(chalk.cyan("  ● " + msg));
+export const warning = (msg) => console.error(chalk.yellow("  ⚠ " + msg));
