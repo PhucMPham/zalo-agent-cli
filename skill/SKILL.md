@@ -133,9 +133,10 @@ zalo-agent mcp start --http <port>                  # HTTP transport (for VPS/re
 zalo-agent mcp start --auth <token>                 # Bearer token auth (HTTP mode)
 zalo-agent mcp start --config <path>                # Custom config file
 ```
-MCP tools exposed (7):
+MCP tools exposed (8):
 - `zalo_get_messages` — Get buffered live messages with cursor-based pagination (incremental reads)
-- `zalo_get_history` — Read older message history for a DM/group (backfill captured at connect + live, ~2-week window)
+- `zalo_get_history` — Read a DM/group's history (backfill at connect + live, ~2-week window); filters: `senderId`, `since`/`until` (date range); each message includes `replyTo` + `mentions`
+- `zalo_search_history` — Search history across ALL threads by sender and/or date range ("all messages from person X", "everything between two dates")
 - `zalo_send_message` — Send text message to a thread (DM or group)
 - `zalo_list_threads` — List active threads with unread counts and metadata
 - `zalo_search_threads` — Find a thread ID by name (fuzzy, Vietnamese-aware)
