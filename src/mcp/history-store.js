@@ -71,7 +71,9 @@ export class HistoryStore {
         let scoped = list;
         if (before !== null && before !== undefined) {
             const idx = list.findIndex((m) => String(m.msgId) === String(before));
-            if (idx >= 0) scoped = list.slice(0, idx); // strictly older than the cursor
+            // Cursor found → messages strictly older than it. Cursor absent → it (and everything
+            // older) was evicted by the per-thread cap, so there's nothing older to return.
+            scoped = idx >= 0 ? list.slice(0, idx) : [];
         }
 
         const page = scoped.slice(Math.max(0, scoped.length - limit));

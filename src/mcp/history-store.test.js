@@ -100,10 +100,12 @@ describe("HistoryStore read + pagination", () => {
         assert.equal(hasMore, false);
     });
 
-    it("ignores an unknown `before` cursor (returns full newest page)", () => {
+    it("returns empty for an unknown `before` cursor (evicted → nothing older)", () => {
         const store = new HistoryStore();
         store.ingest("T1", [m("1", 100), m("2", 200)]);
-        const { messages } = store.read("T1", { limit: 10, before: "9999" });
-        assert.equal(messages.length, 2);
+        const { messages, cursor, hasMore } = store.read("T1", { limit: 10, before: "9999" });
+        assert.deepEqual(messages, []);
+        assert.equal(cursor, null);
+        assert.equal(hasMore, false);
     });
 });
