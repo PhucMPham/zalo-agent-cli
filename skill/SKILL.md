@@ -52,7 +52,9 @@ zalo-agent msg react <msgId> <ID> ":>" -c <cliMsgId>   # React (cliMsgId REQUIRE
 zalo-agent msg undo <msgId> <ID> -c <cliMsgId>         # Recall both sides
 zalo-agent msg delete <msgId> <ID>                      # Delete self only
 zalo-agent msg forward <msgId> <targetId>               # Forward
+zalo-agent msg history <ID> -t 1 -n 50                  # Read group history (-t 0 for DM)
 ```
+`msg history` fetches recent history (Zalo replays ~2 weeks) via a fresh WebSocket. Use `group list` or `conv recent` to get the thread ID first. Deep/older archives are not retrievable via any Zalo API.
 Reactions: `:>` haha · `/-heart` heart · `/-strong` like · `:o` wow · `:-((` cry · `:-h` angry
 
 ### Mentions (groups only, -t 1)
@@ -131,11 +133,14 @@ zalo-agent mcp start --http <port>                  # HTTP transport (for VPS/re
 zalo-agent mcp start --auth <token>                 # Bearer token auth (HTTP mode)
 zalo-agent mcp start --config <path>                # Custom config file
 ```
-MCP tools exposed:
-- `zalo_get_messages` — Get buffered messages with cursor-based pagination (incremental reads)
+MCP tools exposed (7):
+- `zalo_get_messages` — Get buffered live messages with cursor-based pagination (incremental reads)
+- `zalo_get_history` — Read older message history for a DM/group (backfill captured at connect + live, ~2 week window)
 - `zalo_send_message` — Send text message to a thread (DM or group)
 - `zalo_list_threads` — List active threads with unread counts and metadata
+- `zalo_search_threads` — Find a thread ID by name (fuzzy, Vietnamese-aware)
 - `zalo_mark_read` — Discard messages up to a given cursor
+- `zalo_view_media` — Open a received image/audio/video with the system viewer
 
 Use stdio mode for local Claude Code, HTTP mode for VPS deployments.
 Full reference: `references/mcp-guide.md`

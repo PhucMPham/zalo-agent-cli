@@ -48,9 +48,19 @@ Xây dựng trên [zca-js](https://github.com/RFS-ADRENO/zca-js).
 > zalo-agent mcp start              # stdio (local Claude Code)
 > zalo-agent mcp start --http 3847 --auth your-secret  # HTTP (VPS)
 > ```
-> 4 tools: get_messages · send_message · list_threads · mark_read
-> Auto-reconnect · thread filter · noise reduction · group notifications
+> **7 tools**: get_messages · get_history · send_message · list_threads · search_threads · mark_read · view_media
+> Auto-reconnect (exponential backoff) · thread filter · noise reduction · group notifications
 > Xem [MCP Guide](skill/references/mcp-guide.md)
+>
+> **Cấu hình client (stdio):**
+> - **Claude Code**: `claude mcp add zalo -- zalo-agent mcp start`
+> - **Claude Desktop** — sửa `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) hoặc `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+>   ```json
+>   { "mcpServers": { "zalo": { "command": "zalo-agent", "args": ["mcp", "start"] } } }
+>   ```
+>   App GUI không kế thừa PATH của shell (đặc biệt với nvm). Nếu Claude Desktop báo không tìm thấy `zalo-agent`, thay `command` bằng đường dẫn tuyệt đối từ `which zalo-agent`, ví dụ `/Users/ban/.nvm/versions/node/v20.x/bin/zalo-agent`.
+>
+> ⚠️ **Chỉ bật MCP server ở MỘT client tại một thời điểm** (Claude Code **hoặc** Claude Desktop). Zalo chỉ cho phép một phiên web (zca-js) mỗi tài khoản — chạy cả hai sẽ gây vòng lặp mất kết nối (reconnect loop). App Zalo gốc trên máy thì không ảnh hưởng.
 
 ---
 
@@ -178,9 +188,19 @@ CLI tool for Zalo automation — multi-account, proxy support, bank transfers, Q
 > zalo-agent mcp start              # stdio (local Claude Code)
 > zalo-agent mcp start --http 3847 --auth your-secret  # HTTP (VPS)
 > ```
-> 4 tools: get_messages · send_message · list_threads · mark_read
-> Auto-reconnect · thread filter · noise reduction · group notifications
+> **7 tools**: get_messages · get_history · send_message · list_threads · search_threads · mark_read · view_media
+> Auto-reconnect (exponential backoff) · thread filter · noise reduction · group notifications
 > See [MCP Guide](skill/references/mcp-guide.md)
+>
+> **Client setup (stdio):**
+> - **Claude Code**: `claude mcp add zalo -- zalo-agent mcp start`
+> - **Claude Desktop** — edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+>   ```json
+>   { "mcpServers": { "zalo": { "command": "zalo-agent", "args": ["mcp", "start"] } } }
+>   ```
+>   GUI apps don't inherit your shell PATH (especially with nvm). If Claude Desktop can't find `zalo-agent`, set `command` to the absolute path from `which zalo-agent`, e.g. `/Users/you/.nvm/versions/node/v20.x/bin/zalo-agent`.
+>
+> ⚠️ **Run the MCP server in only ONE client at a time** (Claude Code **or** Claude Desktop). Zalo allows a single web (zca-js) session per account — running both triggers a reconnect/eviction loop. The native Zalo desktop app is unaffected.
 
 ### Quick Start
 
