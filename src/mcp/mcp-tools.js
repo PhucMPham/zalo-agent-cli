@@ -1,10 +1,12 @@
 /**
  * MCP tool registrations for Zalo message access and sending.
- * Registers 7 tools: zalo_get_messages, zalo_get_history, zalo_send_message, zalo_list_threads, zalo_search_threads, zalo_mark_read, zalo_view_media.
+ * Registers 8 tools: zalo_get_messages, zalo_get_history, zalo_search_history, zalo_send_message,
+ * zalo_list_threads, zalo_search_threads, zalo_mark_read, zalo_view_media.
  */
 
 import { z } from "zod";
 import { downloadMedia, openFile } from "./media-downloader.js";
+import { parseTimeBoundary } from "./history-store.js";
 
 /** Thread type constants matching zca-js ThreadType enum */
 const THREAD_USER = 0;
@@ -25,6 +27,22 @@ function ok(result) {
  */
 function err(message) {
     return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+}
+
+/**
+ * Annotate each message with its thread's display name (per-message, so it works for
+ * both single-thread and cross-thread result sets).
+ * @param {Array} messages
+ * @param {import("./thread-name-cache.js").ThreadNameCache} [nameCache]
+ * @returns {Array} the same messages, enriched
+ */
+function enrichThreadNames(messages, nameCache) {
+    if (!nameCache) return messages;
+    for (const msg of messages) {
+        const info = nameCache.get(msg.threadId);
+        if (info) msg.threadName = info.name;
+    }
+    return messages;
 }
 
 /**
@@ -202,7 +220,9 @@ export function registerTools(server, api, buffer, filter, config, nameCache, hi
             description:
                 "Fetch message history for a Zalo DM or group conversation. Served from history this MCP " +
                 "server has captured: seeded from the Zalo server's backfill each time the server (re)connects " +
-                "(recent window, ~2 weeks) and growing as new messages arrive. Returns messages oldest→newest. " +
+                "(recent window, ~2 weeks) and growing as new messages arrive. Returns messages oldest→newest, " +
+                "each with 'replyTo' (who/what it replies to) and 'mentions' when present. " +
+                "Optional filters: 'senderId' (one person), 'since'/'until' (date range). " +
                 "To page further back in time, pass the previous response's 'cursor' value as 'lastMsgId'. " +
                 "Note: deep/old archives beyond Zalo's replay window are not retrievable via any API.",
             inputSchema: z.object({
@@ -214,6 +234,19 @@ export function registerTools(server, api, buffer, filter, config, nameCache, hi
                     .max(1)
                     .default(THREAD_USER)
                     .describe("Thread type: 0=DM(User), 1=Group (used for the response label)"),
+                senderId: z.string().optional().nullable().describe("Only messages sent by this user id"),
+                since: z
+                    .union([z.string(), z.number()])
+                    .optional()
+                    .nullable()
+                    .describe("Only messages at/after this time — 'YYYY-MM-DD', ISO datetime, or epoch ms"),
+                until: z
+                    .union([z.string(), z.number()])
+                    .optional()
+                    .nullable()
+                    .describe(
+                        "Only messages at/before this time — 'YYYY-MM-DD' (inclusive), ISO datetime, or epoch ms",
+                    ),
                 limit: z.number().int().min(1).max(200).default(50).describe("Max messages to fetch"),
                 lastMsgId: z
                     .string()
@@ -222,24 +255,22 @@ export function registerTools(server, api, buffer, filter, config, nameCache, hi
                     .describe("Cursor: pass the previous response's 'cursor' to page further back in time"),
             }),
         },
-        async ({ threadId, threadType, limit, lastMsgId }) => {
+        async ({ threadId, threadType, senderId, since, until, limit, lastMsgId }) => {
             try {
                 if (!historyStore) {
                     return err("History store unavailable — restart the MCP server.");
                 }
 
-                const { messages, cursor, hasMore } = historyStore.read(threadId, {
+                const { messages, cursor, hasMore } = historyStore.query({
+                    threadId,
+                    senderId: senderId || null,
+                    since: parseTimeBoundary(since),
+                    until: parseTimeBoundary(until, true),
                     limit,
                     before: lastMsgId || null,
                 });
 
-                // Enrich with thread name
-                if (nameCache) {
-                    const info = nameCache.get(threadId);
-                    if (info) {
-                        for (const msg of messages) msg.threadName = info.name;
-                    }
-                }
+                enrichThreadNames(messages, nameCache);
 
                 return ok({
                     threadId,
@@ -251,6 +282,76 @@ export function registerTools(server, api, buffer, filter, config, nameCache, hi
                 });
             } catch (e) {
                 console.error("[mcp-tools] zalo_get_history error:", e.message);
+                return err(e.message);
+            }
+        },
+    );
+
+    // --- zalo_search_history ---
+    server.registerTool(
+        "zalo_search_history",
+        {
+            title: "Search Zalo Message History",
+            description:
+                "Search captured message history ACROSS all threads (or one), filtered by sender and/or date " +
+                "range. Use this for 'all messages from person X' (their DM + their messages in every group) or " +
+                "'everything between two dates'. Returns messages oldest→newest with 'replyTo' and 'mentions'. " +
+                "Provide at least one of senderId / since / until (or a threadId) to narrow the search. " +
+                "Same coverage limit as zalo_get_history (~2-week replay window + live since server start).",
+            inputSchema: z.object({
+                senderId: z.string().optional().nullable().describe("Only messages sent by this user id"),
+                threadId: z
+                    .string()
+                    .optional()
+                    .nullable()
+                    .describe("Restrict to one thread; omit to search across all threads"),
+                since: z
+                    .union([z.string(), z.number()])
+                    .optional()
+                    .nullable()
+                    .describe("Only messages at/after this time — 'YYYY-MM-DD', ISO datetime, or epoch ms"),
+                until: z
+                    .union([z.string(), z.number()])
+                    .optional()
+                    .nullable()
+                    .describe(
+                        "Only messages at/before this time — 'YYYY-MM-DD' (inclusive), ISO datetime, or epoch ms",
+                    ),
+                limit: z.number().int().min(1).max(200).default(50).describe("Max messages to return"),
+                before: z
+                    .string()
+                    .optional()
+                    .nullable()
+                    .describe("Cursor: pass the previous response's 'cursor' to page further back in time"),
+            }),
+        },
+        async ({ senderId, threadId, since, until, limit, before }) => {
+            try {
+                if (!historyStore) {
+                    return err("History store unavailable — restart the MCP server.");
+                }
+                // Parse boundaries first so presence is judged on the parsed value (a valid
+                // epoch-0 boundary must not be rejected as "no filter").
+                const sinceMs = parseTimeBoundary(since);
+                const untilMs = parseTimeBoundary(until, true);
+                if (!senderId && !threadId && sinceMs === null && untilMs === null) {
+                    return err("Provide at least one filter: senderId, threadId, since, or until.");
+                }
+
+                const { messages, cursor, hasMore } = historyStore.query({
+                    threadId: threadId || null,
+                    senderId: senderId || null,
+                    since: sinceMs,
+                    until: untilMs,
+                    limit,
+                    before: before || null,
+                });
+
+                enrichThreadNames(messages, nameCache);
+
+                return ok({ count: messages.length, messages, cursor, hasMore });
+            } catch (e) {
+                console.error("[mcp-tools] zalo_search_history error:", e.message);
                 return err(e.message);
             }
         },

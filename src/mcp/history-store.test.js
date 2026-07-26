@@ -1,10 +1,15 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { HistoryStore } from "./history-store.js";
+import { HistoryStore, parseTimeBoundary } from "./history-store.js";
 
 /** Helper: create a history message */
 function m(msgId, timestamp, text = "hi") {
     return { msgId, timestamp, text, threadId: "T1" };
+}
+
+/** Helper: create a history message with sender + thread */
+function msg(msgId, timestamp, { senderId = "u1", threadId = "T1" } = {}) {
+    return { msgId, timestamp, text: "hi", senderId, threadId };
 }
 
 describe("HistoryStore ingest", () => {
@@ -107,5 +112,113 @@ describe("HistoryStore read + pagination", () => {
         assert.deepEqual(messages, []);
         assert.equal(cursor, null);
         assert.equal(hasMore, false);
+    });
+});
+
+describe("HistoryStore query filters", () => {
+    function seeded() {
+        const store = new HistoryStore();
+        store.ingest("T1", [
+            msg("1", 100, { senderId: "alice", threadId: "T1" }),
+            msg("2", 200, { senderId: "bob", threadId: "T1" }),
+            msg("3", 300, { senderId: "alice", threadId: "T1" }),
+        ]);
+        store.ingest("T2", [
+            msg("4", 150, { senderId: "alice", threadId: "T2" }),
+            msg("5", 250, { senderId: "carol", threadId: "T2" }),
+        ]);
+        return store;
+    }
+
+    it("filters by senderId within a thread", () => {
+        const { messages } = seeded().query({ threadId: "T1", senderId: "alice" });
+        assert.deepEqual(
+            messages.map((x) => x.msgId),
+            ["1", "3"],
+        );
+    });
+
+    it("filters by senderId across all threads when threadId omitted", () => {
+        const { messages } = seeded().query({ senderId: "alice" });
+        // Merged + sorted by timestamp: T1/1(100), T2/4(150), T1/3(300)
+        assert.deepEqual(
+            messages.map((x) => x.msgId),
+            ["1", "4", "3"],
+        );
+    });
+
+    it("filters by since/until (inclusive)", () => {
+        const { messages } = seeded().query({ since: 150, until: 250 });
+        assert.deepEqual(messages.map((x) => x.msgId).sort(), ["2", "4", "5"]);
+    });
+
+    it("combines senderId + date range + cross-thread", () => {
+        const { messages } = seeded().query({ senderId: "alice", since: 120 });
+        assert.deepEqual(
+            messages.map((x) => x.msgId),
+            ["4", "3"],
+        );
+    });
+
+    it("paginates cross-thread results backward via the cursor", () => {
+        const store = seeded();
+        const first = store.query({ senderId: "alice", limit: 1 }); // newest alice msg = "3"
+        assert.deepEqual(
+            first.messages.map((x) => x.msgId),
+            ["3"],
+        );
+        assert.equal(first.hasMore, true);
+        const older = store.query({ senderId: "alice", limit: 10, before: first.cursor });
+        assert.deepEqual(
+            older.messages.map((x) => x.msgId),
+            ["1", "4"],
+        );
+    });
+
+    it("returns empty for an evicted cross-thread `before` cursor", () => {
+        const { messages, cursor, hasMore } = seeded().query({ senderId: "alice", before: "9999" });
+        assert.deepEqual(messages, []);
+        assert.equal(cursor, null);
+        assert.equal(hasMore, false);
+    });
+
+    it("breaks equal-timestamp ties by lexicographic msgId (deterministic)", () => {
+        const store = new HistoryStore();
+        store.ingest("T1", [msg("b", 100), msg("a", 100), msg("c", 100)]);
+        const { messages } = store.query({ threadId: "T1" });
+        assert.deepEqual(
+            messages.map((x) => x.msgId),
+            ["a", "b", "c"],
+        );
+    });
+});
+
+describe("parseTimeBoundary", () => {
+    it("passes through numeric ms", () => {
+        assert.equal(parseTimeBoundary(1785070103366), 1785070103366);
+    });
+
+    it("parses an all-digit string as ms", () => {
+        assert.equal(parseTimeBoundary("1785070103366"), 1785070103366);
+    });
+
+    it("parses a date-only string to local start of day", () => {
+        assert.equal(parseTimeBoundary("2026-07-26"), new Date("2026-07-26T00:00:00").getTime());
+    });
+
+    it("parses an ISO datetime with Z as UTC", () => {
+        assert.equal(parseTimeBoundary("2026-07-26T10:00:00Z"), Date.parse("2026-07-26T10:00:00Z"));
+    });
+
+    it("resolves a date-only end boundary to end of day", () => {
+        const start = new Date("2026-07-26T00:00:00").getTime();
+        assert.equal(parseTimeBoundary("2026-07-26", true), start + 86400000 - 1);
+    });
+
+    it("returns null for empty/invalid input", () => {
+        assert.equal(parseTimeBoundary(null), null);
+        assert.equal(parseTimeBoundary(undefined), null);
+        assert.equal(parseTimeBoundary(""), null);
+        assert.equal(parseTimeBoundary("not-a-date"), null);
     });
 });

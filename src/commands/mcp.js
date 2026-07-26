@@ -11,7 +11,7 @@ import { HistoryStore } from "../mcp/history-store.js";
 import { reconnectDelay } from "../mcp/reconnect.js";
 import { ThreadFilter } from "../mcp/thread-filter.js";
 import { loadMCPConfig, parseDuration } from "../mcp/mcp-config.js";
-import { extractMessageText } from "../utils/extract-message-text.js";
+import { normalizeMessage, toHistoryMessage } from "../mcp/message-normalize.js";
 import { createMCPServer } from "../mcp/mcp-server.js";
 import { registerTools } from "../mcp/mcp-tools.js";
 import { createHTTPServer } from "../mcp/mcp-http-transport.js";
@@ -25,78 +25,6 @@ const CLOSE_DUPLICATE = 3000;
 /** Reconnect backoff tuning. */
 const STABLE_CONNECTION_MS = 60 * 1000; // a connection lasting this long is "healthy"
 const THRASH_WARN_AT = 3; // consecutive rapid closes before warning about multi-session conflict
-
-/** Map a zca-js thread type (0/1) to the string label used across the buffer/history. */
-function threadTypeLabel(type) {
-    return type === 0 ? "dm" : "group";
-}
-
-/**
- * Resolve a zca-js message's content into a plain-text string and a type label.
- * Text messages carry a string content; everything else is an object we flatten
- * via extractMessageText (reply/bubble/link/etc.).
- * @param {*} rawContent - msg.data.content
- * @param {string} [msgType] - msg.data.msgType
- * @returns {{ isText: boolean, text: string, type: string }}
- */
-function resolveContent(rawContent, msgType) {
-    const isText = typeof rawContent === "string";
-    return {
-        isText,
-        text: isText ? rawContent : extractMessageText(rawContent, msgType),
-        type: isText ? "text" : msgType || "attachment",
-    };
-}
-
-/**
- * Normalize a raw zca-js message event into the live buffer's message shape.
- * @param {object} msg - Raw zca-js message event
- * @returns {object} Normalized message
- */
-function normalizeMessage(msg) {
-    const rawContent = msg.data.content;
-    const { isText, text, type } = resolveContent(rawContent, msg.data.msgType);
-    return {
-        id: msg.data.msgId,
-        threadId: msg.threadId,
-        threadType: threadTypeLabel(msg.type),
-        senderId: msg.data.uidFrom || null,
-        senderName: msg.data.dName || null,
-        text,
-        timestamp: Date.now(),
-        type,
-        attachment:
-            !isText && rawContent
-                ? {
-                      type: msg.data.msgType,
-                      url: rawContent.href || null,
-                      description: rawContent.title || null,
-                  }
-                : null,
-        replyTo: null,
-    };
-}
-
-/**
- * Normalize a raw zca-js message into the HistoryStore shape.
- * Unlike normalizeMessage(), this preserves the real Zalo timestamp (msg.data.ts)
- * so historical messages sort chronologically.
- * @param {object} msg - Raw zca-js message event (live or old_messages backfill)
- * @returns {object} History message
- */
-function toHistoryMessage(msg) {
-    const { text, type } = resolveContent(msg.data?.content, msg.data?.msgType);
-    return {
-        msgId: msg.data?.msgId,
-        threadId: msg.threadId,
-        threadType: threadTypeLabel(msg.type),
-        senderId: msg.data?.uidFrom || null,
-        senderName: msg.data?.dName || null,
-        text,
-        timestamp: msg.data?.ts !== null && msg.data?.ts !== undefined ? Number(msg.data.ts) : Date.now(),
-        type,
-    };
-}
 
 export function registerMCPCommands(program) {
     const mcp = program.command("mcp").description("MCP server for AI agent integration");
