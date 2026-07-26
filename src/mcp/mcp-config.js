@@ -25,6 +25,9 @@ export function getDefaultConfig() {
             autoDigestThreshold: 50,
             bufferMaxAge: "2h",
             bufferMaxSize: 500,
+            historyMaxPerThread: 2000, // messages retained per thread in the history store
+            historyBackfillPages: 5, // pages of old-message backfill fetched per thread type on connect
+            historyBackfillPageTimeout: "8s", // per-page wait for a backfill response
         },
         media: {
             downloadDir: null, // default: ~/.zalo-agent-cli/media/
