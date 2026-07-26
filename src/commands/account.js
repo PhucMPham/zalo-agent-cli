@@ -24,7 +24,8 @@ export function registerAccountCommands(program) {
             const safe = accounts.map((a) => ({ ...a, proxy: maskProxy(a.proxy) }));
             output(safe, program.opts().json, () => {
                 if (!accounts.length) {
-                    info("No accounts. Use: zalo-agent account login");
+                    // Empty state is command output (data), not a status message → stdout.
+                    console.log("  No accounts. Use: zalo-agent account login");
                     return;
                 }
                 console.log(`  ${"Active".padEnd(8)} ${"Owner ID".padEnd(22)} ${"Name".padEnd(20)} Proxy`);
