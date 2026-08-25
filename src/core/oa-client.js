@@ -331,14 +331,28 @@ export function extractAttachmentId(result) {
     return result?.data?.attachment_id || result?.attachment_id || null;
 }
 
-/** Upload a local file and send it to a follower in one step. */
+/**
+ * Upload a local file and send it to a follower in one step.
+ *
+ * If the send fails after the upload succeeded, the error carries the already
+ * uploaded `fileToken` so the caller can retry delivery without re-uploading.
+ */
 export async function uploadAndSendFile(userId, filePath, messageType = "cs", oaId = "default") {
     const upload = await uploadFile(filePath, oaId);
     const fileToken = extractUploadToken(upload);
     if (!fileToken) {
         throw new Error(`Upload succeeded but returned no file token: ${JSON.stringify(upload)}`);
     }
-    const result = await sendFile(userId, fileToken, messageType, oaId);
+
+    let result;
+    try {
+        result = await sendFile(userId, fileToken, messageType, oaId);
+    } catch (e) {
+        // The upload is already paid for — most send failures (wrong user id, expired
+        // CS window, rate limit) are retriable with this same token.
+        e.fileToken = fileToken;
+        throw e;
+    }
     return { upload, fileToken, result };
 }
 

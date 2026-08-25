@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - **Windows paths broke the multipart filename** — `filePath.split("/").pop()` sent the full path as the filename on Windows; replaced with `basename()`.
 - **Opaque errors on upload failures** — missing file, directory path, empty file, and oversize file are now rejected up front with actionable messages (Zalo caps: 1 MB image, 5 MB file), and non-JSON API responses report the HTTP status and body instead of a JSON parse error.
 - `oa msg file` with an empty token now explains what to do instead of sending an invalid request.
+- **Send failure no longer discards a successful upload** — when `uploadAndSendFile` uploads a file but delivery fails (wrong user id, expired CS window, rate limit), the error now carries the `fileToken` and the CLI prints a ready-to-run retry command, instead of forcing a re-upload of up to 5 MB.
 
 ### Added
 

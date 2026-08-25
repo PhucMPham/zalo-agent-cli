@@ -186,6 +186,21 @@ describe("uploadAndSendFile", () => {
         assert.equal(JSON.parse(calls[1].opts.body).message.attachment.payload.token, "file-token-9");
     });
 
+    it("keeps the uploaded token on the error when the send fails", async () => {
+        responses.push({ status: 200, body: JSON.stringify({ error: 0, data: { token: "file-token-9" } }) });
+        responses.push({ status: 200, body: JSON.stringify({ error: -32, message: "Rate limit exceeded" }) });
+
+        const err = await oa.uploadAndSendFile("user-1", fixture("doc.docx")).then(
+            () => null,
+            (e) => e,
+        );
+
+        assert.ok(err, "expected the send failure to propagate");
+        assert.match(err.message, /Rate limit exceeded/);
+        // The upload already succeeded — the token must survive so the send can be retried.
+        assert.equal(err.fileToken, "file-token-9");
+    });
+
     it("fails clearly when the upload returns no token", async () => {
         responses.push({ status: 200, body: JSON.stringify({ error: 0, data: {} }) });
 

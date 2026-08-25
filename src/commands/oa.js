@@ -278,6 +278,10 @@ export function registerOACommands(program) {
                 output(result, json(), () => success("File message sent"));
             } catch (e) {
                 error(e.message);
+                if (e.fileToken) {
+                    info(`File is already uploaded — retry the send without re-uploading:`);
+                    info(`  zalo-agent oa msg file ${userId} ${e.fileToken}`);
+                }
             }
         });
 
