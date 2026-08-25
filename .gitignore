@@ -8,3 +8,4 @@ accounts.json
 qr.png
 *.log
 .DS_Store
+dist/
