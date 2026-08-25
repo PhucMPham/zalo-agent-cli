@@ -30,7 +30,7 @@ export default function Hero() {
                             className="mb-12 font-display text-4xl leading-tight font-bold md:text-6xl lg:text-7xl"
                         >
                             Tự động hóa{" "}
-                            <span className="animate-float relative mx-1 inline-flex h-10 w-auto items-center justify-center rounded-full border border-line bg-code-bg px-4 align-middle shadow-glow md:h-16 md:px-6">
+                            <span className="animate-float relative inline-flex h-[0.9em] w-auto items-center justify-center rounded-full border border-line bg-code-bg px-[0.35em] align-middle shadow-glow">
                                 <span className="font-mono text-sm font-bold text-brand md:text-xl">
                                     <span aria-hidden="true">{"{ "}</span>
                                     Zalo
@@ -40,7 +40,7 @@ export default function Hero() {
                             ngay trong <br className="hidden md:block" />
                             terminal{" "}
                             <span
-                                className="animate-float relative mx-1 inline-flex h-10 w-auto items-center justify-center rounded-full border border-line bg-code-bg px-4 align-middle shadow-glow md:h-16 md:px-6"
+                                className="animate-float relative inline-flex h-[0.9em] w-auto items-center justify-center rounded-full border border-line bg-code-bg px-[0.35em] align-middle shadow-glow"
                                 style={{ animationDelay: "3s" }}
                                 aria-hidden="true"
                             >
