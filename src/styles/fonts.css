@@ -1,12 +1,2 @@
-/* Google Fonts: Inter (400/500/600/700) + Instrument Serif (regular + italic) */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap");
-
-:root {
-    font-family:
-        "Inter",
-        ui-sans-serif,
-        system-ui,
-        -apple-system,
-        "Segoe UI",
-        sans-serif;
-}
+/* Google Fonts: Space Grotesk (headings) · Inter (body) · JetBrains Mono (code) */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");

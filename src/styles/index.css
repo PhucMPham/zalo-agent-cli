@@ -1,13 +1,104 @@
 @import "./fonts.css";
 @import "tailwindcss";
 
-html,
-body,
-#root {
-    height: 100%;
+@theme {
+    --color-brand: #ffe500;
+    --color-brand-hover: #e6ce00;
+    --color-bg: #050505;
+    --color-surface: #111111;
+    --color-surface-hover: #1a1a1a;
+    --color-line: #222222;
+    --color-fg: #ffffff;
+    --color-muted: #888888;
+    --color-zalo: #0068ff;
+    --color-code-bg: #0d0d0d;
+    --color-code-comment: #6a9955;
+    --color-code-keyword: #c586c0;
+    --color-code-string: #ce9178;
+    --color-code-fn: #dcdcaa;
+
+    --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --shadow-glow: 0 0 20px rgba(255, 229, 0, 0.15);
+    --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.5);
+
+    --animate-marquee: marquee 25s linear infinite;
+    --animate-float: float 6s ease-in-out infinite;
+    --animate-blink: blink 1s step-end infinite;
+}
+
+@keyframes marquee {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-12px);
+    }
+}
+
+@keyframes blink {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+}
+
+html {
+    scroll-behavior: smooth;
 }
 
 body {
     margin: 0;
+    background-color: var(--color-bg);
+    color: var(--color-fg);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+::selection {
+    background-color: var(--color-brand);
+    color: var(--color-bg);
+}
+
+/* Scroll-reveal, applied by useScrollReveal(). */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition:
+        opacity 0.8s ease-out,
+        transform 0.8s ease-out;
+}
+
+.reveal-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    .animate-float,
+    .animate-marquee,
+    .animate-blink {
+        animation: none;
+    }
 }
