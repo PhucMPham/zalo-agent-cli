@@ -265,9 +265,7 @@ export function registerTools(server, api, buffer, filter, config, nameCache) {
                             threadId: msg.threadId,
                             senderId: msg.data?.uidFrom || null,
                             senderName: msg.data?.dName || null,
-                            text: isText
-                                ? rawContent
-                                : extractMessageText(rawContent, msg.data?.msgType),
+                            text: isText ? rawContent : extractMessageText(rawContent, msg.data?.msgType),
                             timestamp: msg.data?.ts ? Number(msg.data.ts) : null,
                             type: isText ? "text" : msg.data?.msgType || "attachment",
                         });

@@ -497,7 +497,9 @@ export function registerMsgCommands(program) {
 
             try {
                 if (!jsonMode && limit > 100) {
-                    info(`Warning: fetching up to ${limit} messages. Large history may use significant memory and bandwidth.`);
+                    info(
+                        `Warning: fetching up to ${limit} messages. Large history may use significant memory and bandwidth.`,
+                    );
                 }
 
                 const api = getApi();
@@ -553,9 +555,10 @@ export function registerMsgCommands(program) {
                             threadId: msg.threadId,
                             senderId: msg.data?.uidFrom || null,
                             senderName: msg.data?.dName || null,
-                            text: typeof msg.data?.content === "string"
-                                ? msg.data.content
-                                : extractMessageText(msg.data?.content, msg.data?.msgType),
+                            text:
+                                typeof msg.data?.content === "string"
+                                    ? msg.data.content
+                                    : extractMessageText(msg.data?.content, msg.data?.msgType),
                             timestamp: msg.data?.ts ? Number(msg.data.ts) : null,
                             type: typeof msg.data?.content === "string" ? "text" : msg.data?.msgType || "attachment",
                         });
@@ -574,7 +577,12 @@ export function registerMsgCommands(program) {
                 allMessages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
                 output(
-                    { threadId, threadType: threadType === 0 ? "dm" : "group", count: allMessages.length, messages: allMessages },
+                    {
+                        threadId,
+                        threadType: threadType === 0 ? "dm" : "group",
+                        count: allMessages.length,
+                        messages: allMessages,
+                    },
                     jsonMode,
                     () => {
                         success(`${allMessages.length} message(s) from ${threadId}`);
@@ -590,7 +598,9 @@ export function registerMsgCommands(program) {
                 api.listener.stop();
                 process.exit(0);
             } catch (e) {
-                try { api.listener.stop(); } catch {}
+                try {
+                    api.listener.stop();
+                } catch {}
                 error(`History fetch failed: ${e.message}`);
                 process.exit(1);
             }
