@@ -8,7 +8,11 @@
   },
   "main": "./src/index.js",
   "files": [
-    "src/",
+    "src/index.js",
+    "src/commands",
+    "src/core",
+    "src/mcp",
+    "src/utils",
     "LICENSE",
     "DISCLAIMER.md"
   ],
