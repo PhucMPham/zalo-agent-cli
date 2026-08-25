@@ -1,7 +1,6 @@
 import HeroVideo from "./HeroVideo";
 import InstallBlock from "./InstallBlock";
 import LiquidStage from "./LiquidStage";
-import ZaloMark from "./ZaloMark";
 import { REPO_URL, VERSION } from "../links";
 
 export default function Hero() {
@@ -31,19 +30,23 @@ export default function Hero() {
                             className="mb-12 font-display text-4xl leading-tight font-bold md:text-6xl lg:text-7xl"
                         >
                             Tự động hóa{" "}
-                            <span className="animate-float relative mx-1 inline-flex h-10 w-auto items-center justify-center rounded-full border border-line bg-code-bg px-5 align-middle text-brand shadow-glow md:h-16 md:px-8">
-                                <ZaloMark className="h-7 w-7 md:h-10 md:w-10" inverted />
-                                <span className="sr-only">Zalo</span>
+                            <span className="animate-float relative mx-1 inline-flex h-10 w-auto items-center justify-center rounded-full border border-line bg-code-bg px-4 align-middle shadow-glow md:h-16 md:px-6">
+                                <span className="font-mono text-sm font-bold text-brand md:text-xl">
+                                    <span aria-hidden="true">{"{ "}</span>
+                                    Zalo
+                                    <span aria-hidden="true">{" }"}</span>
+                                </span>
                             </span>{" "}
                             ngay trong <br className="hidden md:block" />
                             terminal{" "}
                             <span
-                                className="animate-float relative mx-1 inline-flex h-10 w-auto items-center justify-center gap-1.5 rounded-full border border-line bg-code-bg px-5 align-middle shadow-glow md:h-16 md:px-8"
+                                className="animate-float relative mx-1 inline-flex h-10 w-auto items-center justify-center rounded-full border border-line bg-code-bg px-4 align-middle shadow-glow md:h-16 md:px-6"
                                 style={{ animationDelay: "3s" }}
                                 aria-hidden="true"
                             >
-                                <span className="font-mono text-sm font-bold text-brand md:text-xl">$</span>
-                                <span className="animate-blink inline-block h-4 w-2 rounded-[1px] bg-brand md:h-6 md:w-3" />
+                                <span className="font-mono text-sm font-bold text-brand md:text-xl">
+                                    $ <span className="animate-blink">_</span>
+                                </span>
                             </span>{" "}
                             của bạn
                         </h1>
