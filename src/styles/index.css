@@ -102,12 +102,3 @@ body {
         animation: none;
     }
 }
-
-/* ParticleScroll owns the page scroll when it is active: its own content
-   element is the scroller, so smooth anchor jumps belong to that element. It
-   sits inside the source canvas on the html-in-canvas path and directly under
-   the wrapper otherwise. */
-.page-scroller > div,
-.page-scroller > canvas > div {
-    scroll-behavior: smooth;
-}
