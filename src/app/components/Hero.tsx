@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import HeroVideo from "./HeroVideo";
 import LiquidStage from "./LiquidStage";
 import ZaloMark from "./ZaloMark";
 import { INSTALL_COMMAND, REPO_URL, VERSION } from "../links";
@@ -21,6 +22,8 @@ export default function Hero() {
         <section id="hero" className="border-b border-line/50">
             <LiquidStage className="relative">
                 <div className="relative flex min-h-[90vh] flex-col justify-center overflow-hidden px-6 pt-24 pb-20">
+                    <HeroVideo />
+
                     <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#222_1px,transparent_1px),linear-gradient(to_bottom,#222_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-20 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 
                     <div className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/10 mix-blend-screen blur-[100px]" />
