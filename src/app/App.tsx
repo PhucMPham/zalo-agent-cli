@@ -7,6 +7,7 @@ import Features from "./components/Features";
 import UsageModes from "./components/UsageModes";
 import Faq from "./components/Faq";
 import Footer from "./components/Footer";
+import PageScroll from "./components/PageScroll";
 import useScrollReveal from "./hooks/useScrollReveal";
 
 export default function App() {
@@ -15,16 +16,18 @@ export default function App() {
     return (
         <div className="min-h-screen bg-bg font-sans text-fg">
             <Header />
-            <main className="pt-20">
-                <Hero />
-                <Marquee />
-                <Showcase />
-                <Commands />
-                <Features />
-                <UsageModes />
-                <Faq />
-            </main>
-            <Footer />
+            <PageScroll>
+                <main className="pt-20">
+                    <Hero />
+                    <Marquee />
+                    <Showcase />
+                    <Commands />
+                    <Features />
+                    <UsageModes />
+                    <Faq />
+                </main>
+                <Footer />
+            </PageScroll>
         </div>
     );
 }
