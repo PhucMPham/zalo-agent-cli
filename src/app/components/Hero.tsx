@@ -1,23 +1,10 @@
-import { useState } from "react";
-import { Check, Copy } from "lucide-react";
 import HeroVideo from "./HeroVideo";
+import InstallBlock from "./InstallBlock";
 import LiquidStage from "./LiquidStage";
 import ZaloMark from "./ZaloMark";
-import { INSTALL_COMMAND, REPO_URL, VERSION } from "../links";
+import { REPO_URL, VERSION } from "../links";
 
 export default function Hero() {
-    const [copied, setCopied] = useState(false);
-
-    const copy = async () => {
-        try {
-            await navigator.clipboard.writeText(INSTALL_COMMAND);
-            setCopied(true);
-            window.setTimeout(() => setCopied(false), 1800);
-        } catch {
-            // Clipboard blocked (insecure context) — the command stays selectable.
-        }
-    };
-
     return (
         <section id="hero" className="border-b border-line/50">
             <LiquidStage className="relative">
@@ -67,20 +54,7 @@ export default function Hero() {
                                 MCP server để AI agent dùng trực tiếp.
                             </p>
 
-                            <div className="group flex flex-col gap-2 sm:flex-row">
-                                <code className="flex-1 truncate rounded-xl border border-line bg-surface px-4 py-3 font-mono text-sm text-fg md:px-5 md:py-4 md:text-base">
-                                    <span className="text-muted">$ </span>
-                                    {INSTALL_COMMAND}
-                                </code>
-                                <button
-                                    type="button"
-                                    onClick={copy}
-                                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-bold text-bg shadow-glow transition-all hover:bg-brand-hover active:scale-95 md:px-8 md:py-4 md:text-base"
-                                >
-                                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                                    {copied ? "Đã copy" : "Copy"}
-                                </button>
-                            </div>
+                            <InstallBlock />
 
                             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted">
                                 <a href={REPO_URL} className="underline underline-offset-4 hover:text-fg">
