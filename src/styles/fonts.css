@@ -1,2 +1,4 @@
-/* Google Fonts: Space Grotesk (headings) · Inter (body) · JetBrains Mono (code) */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+/* Google Fonts: JetBrains Mono — the whole page is set in it, headings included.
+   The vietnamese subset is served alongside latin, so the diacritics come from
+   the same family instead of falling back to a system font. */
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
