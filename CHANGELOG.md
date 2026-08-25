@@ -16,7 +16,9 @@ All notable changes to this project will be documented in this file.
 
 - `oa msg file <user-id> --file <path>` — uploads a local file and sends it in one step, so the file token no longer has to be copied by hand.
 - `uploadAndSendFile()`, `extractUploadToken()`, and `extractAttachmentId()` helpers in the OA client.
-- `src/utils/upload-helpers.js` with MIME detection and multipart form building, plus 9 unit tests (total: 154).
+- `src/utils/upload-helpers.js` with MIME detection and multipart form building, plus 9 unit tests.
+- `src/core/oa-client.test.js` — 18 regression tests pinning the v2.0/v3.0 endpoint split (uploads on v2.0, messaging on v3.0), multipart filename/MIME, size caps, and error surfacing. Verified to fail if the upload endpoint is reverted to v3.0 (total: 172).
+- `setHttpClient()` test seam on the OA client for injecting a stub HTTP client.
 
 ### Changed
 

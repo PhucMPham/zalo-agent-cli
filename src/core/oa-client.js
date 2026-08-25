@@ -12,8 +12,20 @@ import { buildUploadForm, MAX_FILE_BYTES, MAX_IMAGE_BYTES } from "../utils/uploa
 
 const V3_BASE = "https://openapi.zalo.me/v3.0/oa";
 const V2_BASE = "https://openapi.zalo.me/v2.0/oa";
+
 const DATA_DIR = join(homedir(), ".zalo-agent");
 const OA_CREDS_FILE = join(DATA_DIR, "oa-credentials.json");
+
+/**
+ * Swappable HTTP client. Production always uses node-fetch; tests inject a stub
+ * to assert on the outgoing request without touching the network.
+ */
+let httpClient = nodefetch;
+
+/** Replace the HTTP client. Test seam — not part of the public CLI surface. */
+export function setHttpClient(fn) {
+    httpClient = fn || nodefetch;
+}
 
 /** Ensure data directory exists. */
 function ensureDir() {
@@ -71,7 +83,7 @@ export function getOAuthUrl(appId, redirectUri = "http://localhost:3456/callback
 
 /** Exchange authorization code for access + refresh tokens. */
 export async function exchangeCode(code, appId, secretKey, redirectUri = "http://localhost:3456/callback") {
-    const res = await nodefetch(TOKEN_URL, {
+    const res = await httpClient(TOKEN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded", secret_key: secretKey },
         body: new URLSearchParams({
@@ -86,7 +98,7 @@ export async function exchangeCode(code, appId, secretKey, redirectUri = "http:/
 
 /** Refresh access token using refresh token. */
 export async function refreshAccessToken(refreshToken, appId, secretKey) {
-    const res = await nodefetch(TOKEN_URL, {
+    const res = await httpClient(TOKEN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded", secret_key: secretKey },
         body: new URLSearchParams({
@@ -107,7 +119,7 @@ async function oaFetch(url, { method = "GET", body, token, isFormData = false } 
     if (body && !isFormData) opts.body = JSON.stringify(body);
     if (body && isFormData) opts.body = body;
 
-    const res = await nodefetch(url, opts);
+    const res = await httpClient(url, opts);
     const raw = await res.text();
 
     let data;
