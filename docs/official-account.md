@@ -64,8 +64,11 @@ zalo-agent oa msg text <user-id> "Nội dung" [-m cs]
 zalo-agent oa msg image <user-id> --image-url https://...
 zalo-agent oa msg image <user-id> --image-id <attachment_id>
 
-# Gửi file (cần upload trước)
-zalo-agent oa msg file <user-id> <file-id>
+# Gửi file — upload và gửi trong một lệnh
+zalo-agent oa msg file <user-id> --file ./document.pdf
+
+# Hoặc dùng token đã upload trước đó
+zalo-agent oa msg file <user-id> <file-token>
 
 # Gửi danh sách
 zalo-agent oa msg list <user-id> '[{"title":"Item 1"},{"title":"Item 2"}]'
@@ -97,6 +100,9 @@ zalo-agent oa tag untag <user-id> <tag-name>
 zalo-agent oa upload image ./photo.jpg    # Returns attachment_id
 zalo-agent oa upload file ./document.pdf  # Returns file token
 ```
+
+Upload dùng endpoint `v2.0` (Zalo không có endpoint upload trên `v3.0`).
+Giới hạn: ảnh 1 MB, file 5 MB. File token chỉ dùng được với `oa msg file`.
 
 ### Hội thoại
 

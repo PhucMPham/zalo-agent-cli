@@ -37,7 +37,8 @@ Message types: `cs` (customer service), `transaction`, `promotion`.
 zalo-agent oa msg text <user-id> "message" [-m cs]
 zalo-agent oa msg image <user-id> --image-url https://...
 zalo-agent oa msg image <user-id> --image-id <attachment_id>
-zalo-agent oa msg file <user-id> <file-token>
+zalo-agent oa msg file <user-id> --file ./doc.pdf   # Upload + send in one step
+zalo-agent oa msg file <user-id> <file-token>       # Or reuse an uploaded token
 zalo-agent oa msg list <user-id> '[{"title":"A","subtitle":"B"}]'
 zalo-agent oa msg status <message-id>
 ```
@@ -62,8 +63,8 @@ zalo-agent oa tag untag <user-id> <tag-name>
 ## Media Upload
 
 ```bash
-zalo-agent oa upload image ./photo.jpg   # Returns attachment_id
-zalo-agent oa upload file ./doc.pdf      # Returns file token
+zalo-agent oa upload image ./photo.jpg   # Returns attachment_id (max 1MB)
+zalo-agent oa upload file ./doc.pdf      # Returns file token (max 5MB)
 ```
 
 ## Conversations

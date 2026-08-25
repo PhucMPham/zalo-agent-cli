@@ -28,6 +28,9 @@ import {
     removeFollowerFromTag,
     uploadImage,
     uploadFile,
+    uploadAndSendFile,
+    extractUploadToken,
+    extractAttachmentId,
     getRecentChat,
     getConversation,
     updateMenu,
@@ -251,12 +254,26 @@ export function registerOACommands(program) {
             }
         });
 
-    msg.command("file <user-id> <file-id>")
-        .description("Send file message (requires pre-uploaded file token)")
+    msg.command("file <user-id> [file-id]")
+        .description("Send file message — pass an uploaded token, or --file <path> to upload and send in one step")
+        .option("-f, --file <path>", "Local file to upload and send")
         .option("-m, --msg-type <type>", "Message type: cs | transaction | promotion", "cs")
         .option("--oa-id <id>", "OA identifier", "default")
         .action(async (userId, fileId, opts) => {
             try {
+                if (!opts.file && !fileId) {
+                    throw new Error("Provide an uploaded <file-id> token or --file <path>");
+                }
+                if (opts.file) {
+                    const { fileToken, result } = await uploadAndSendFile(
+                        userId,
+                        resolve(opts.file),
+                        opts.msgType,
+                        opts.oaId,
+                    );
+                    output({ ...result, fileToken }, json(), () => success(`File uploaded and sent (${fileToken})`));
+                    return;
+                }
                 const result = await sendFile(userId, fileId, opts.msgType, opts.oaId);
                 output(result, json(), () => success("File message sent"));
             } catch (e) {
@@ -417,8 +434,10 @@ export function registerOACommands(program) {
             try {
                 const result = await uploadImage(resolve(filePath), opts.oaId);
                 output(result, json(), () => {
-                    const d = result.data || result;
-                    success(`Image uploaded: ${d.attachment_id || JSON.stringify(d)}`);
+                    const id = extractAttachmentId(result);
+                    if (!id) return error(`Upload returned no attachment_id: ${JSON.stringify(result)}`);
+                    success(`Image uploaded: ${id}`);
+                    info(`Send it with: zalo-agent oa msg image <user-id> --image-id ${id}`);
                 });
             } catch (e) {
                 error(e.message);
@@ -433,8 +452,10 @@ export function registerOACommands(program) {
             try {
                 const result = await uploadFile(resolve(filePath), opts.oaId);
                 output(result, json(), () => {
-                    const d = result.data || result;
-                    success(`File uploaded: ${d.token || JSON.stringify(d)}`);
+                    const fileToken = extractUploadToken(result);
+                    if (!fileToken) return error(`Upload returned no file token: ${JSON.stringify(result)}`);
+                    success(`File uploaded: ${fileToken}`);
+                    info(`Send it with: zalo-agent oa msg file <user-id> ${fileToken}`);
                 });
             } catch (e) {
                 error(e.message);
