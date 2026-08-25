@@ -1,4 +1,4 @@
-/* Google Fonts: JetBrains Mono — the whole page is set in it, headings included.
-   The vietnamese subset is served alongside latin, so the diacritics come from
-   the same family instead of falling back to a system font. */
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+/* Google Fonts: Space Grotesk for headings, JetBrains Mono for everything else.
+   Both serve a vietnamese subset alongside latin, so diacritics come from the
+   same family instead of falling back to a system font mid-word. */
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
