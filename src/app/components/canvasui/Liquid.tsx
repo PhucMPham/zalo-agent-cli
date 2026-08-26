@@ -9,6 +9,10 @@
  *   2. createRectCache is inlined, because the standalone registry file ships an import of
  *      ../rect-cache that does not resolve outside the upstream repo.
  *
+ * The project's 200-line-per-file limit deliberately stops at this directory:
+ * splitting a registry item into modules would end the byte-for-byte diff that
+ * makes an upstream update a re-vendor rather than a manual merge.
+ *
  * Licence note: the Commons Clause allows use inside this website but forbids
  * redistributing the component itself, so this directory must stay out of the published
  * npm tarball — see the "files" field in package.json.
