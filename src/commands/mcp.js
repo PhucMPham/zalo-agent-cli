@@ -36,9 +36,10 @@ export function registerMCPCommands(program) {
         .option("--auth <token>", "Bearer token for HTTP auth (only with --http)")
         .option("--host <address>", "HTTP bind address (default: 127.0.0.1, only with --http)")
         .action(async (opts) => {
-            // Perform login explicitly here — preAction hook skips "mcp"
+            // Perform login explicitly here — preAction hook skips "mcp".
+            // jsonMode=true: Auto-login banner must not touch stdout (JSON-RPC).
             try {
-                await autoLogin(false);
+                await autoLogin(true);
             } catch (e) {
                 console.error("[mcp] Auto-login failed:", e.message);
                 process.exit(1);
@@ -278,7 +279,7 @@ export function registerMCPCommands(program) {
                     await new Promise((r) => setTimeout(r, delay));
                     try {
                         clearSession();
-                        await autoLogin(false);
+                        await autoLogin(true);
                         console.error("[mcp] Re-login successful. Restarting listener...");
                         const newApi = getApi();
                         attachListenerHandlers(newApi);
@@ -288,7 +289,7 @@ export function registerMCPCommands(program) {
                         await new Promise((r) => setTimeout(r, 30000));
                         try {
                             clearSession();
-                            await autoLogin(false);
+                            await autoLogin(true);
                             const retryApi = getApi();
                             attachListenerHandlers(retryApi);
                             retryApi.listener.start({ retryOnClose: true });

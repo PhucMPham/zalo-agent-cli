@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **Windows: `npm view zalo-agent-cli version` cmd window on every launch** — the startup update check spawned `npm.cmd`, which opens a console that does not auto-close (#5). The check now hits the npm registry over HTTP (`fetch`), never `execSync("npm view")`, and is skipped entirely in MCP stdio / `--json` so Claude Desktop login no longer pops a window.
+- **MCP stdio: startup Auto-login / update banner could corrupt JSON-RPC** — `mcp start` passed `autoLogin(false)`, so the `● Auto-login` line went to the human output helpers. Combined with the `npm view` spawn this broke Claude Desktop's first frame (`Unexpected token '•'`) (#9). MCP now logs in silently, skips the update check, and keeps stdout for JSON-RPC only.
+- **Update nag when local is ahead of npm** — `1.7.0 !== 1.6.2` warned users to "update" to an older published version. Warn only when the registry version is strictly newer.
 - **OA file/image upload was hitting a non-existent endpoint** — `oa upload file` and `oa upload image` posted to `v3.0/oa/upload/*`, which Zalo does not publish; uploads now go to the documented `v2.0/oa/upload/*` endpoints. This is what made attaching a file to an OA message fail.
 - **Multipart part had no MIME type** — the uploaded blob is now typed from the file extension instead of always defaulting to `application/octet-stream`.
 - **Windows paths broke the multipart filename** — `filePath.split("/").pop()` sent the full path as the filename on Windows; replaced with `basename()`.

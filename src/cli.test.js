@@ -78,6 +78,23 @@ describe("CLI interface", () => {
         assert.match(out, /remove/);
     });
 
+    it("mcp start with no session writes nothing to stdout", () => {
+        try {
+            execFileSync("node", [CLI, "mcp", "start"], {
+                encoding: "utf-8",
+                timeout: 8000,
+                env: { ...process.env, HOME: "/tmp/zalo-agent-cli-test-home-mcp" },
+            });
+            assert.fail("expected mcp start to exit non-zero without a session");
+        } catch (e) {
+            if (e.code === "ERR_ASSERTION") throw e;
+            assert.equal(e.stdout || "", "");
+            assert.match(String(e.stderr || ""), /Not logged in/);
+            assert.doesNotMatch(String(e.stderr || ""), /Update available/);
+            assert.doesNotMatch(String(e.stdout || ""), /[●•]/);
+        }
+    });
+
     it("login --help shows all flags", () => {
         const out = run("login", "--help");
         assert.match(out, /--proxy/);

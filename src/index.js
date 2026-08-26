@@ -58,9 +58,11 @@ program
         if (!skipAutoLogin) {
             await autoLogin(program.opts().json);
         }
-        // Non-blocking update check (skip for update command itself)
-        if (cmdName !== "update") {
-            checkForUpdates(pkg.version, program.opts().json);
+        // Fire-and-forget registry check. Skip `update` (that IS the update) and
+        // `mcp` (stdio is JSON-RPC; spawning npm.cmd on Windows also pops a
+        // console window — issues #5 / #9). ZALO_JSON_MODE is a second guard.
+        if (cmdName !== "update" && cmdName !== "mcp") {
+            void checkForUpdates(pkg.version, program.opts().json);
         }
     });
 
