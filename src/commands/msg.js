@@ -5,8 +5,9 @@
 
 import { resolve } from "path";
 import { getApi } from "../core/zalo-client.js";
-import { success, error, info, output } from "../utils/output.js";
+import { success, error, info, warning, output } from "../utils/output.js";
 import { extractMessageText } from "../utils/extract-message-text.js";
+import { sendFilesWithTimeout } from "../utils/send-with-timeout.js";
 
 /**
  * TextStyle codes matching zca-js TextStyle enum.
@@ -180,14 +181,19 @@ export function registerMsgCommands(program) {
         .action(async (threadId, paths, opts) => {
             try {
                 const absPaths = paths.map((p) => resolve(p));
-                const result = await getApi().sendMessage(
-                    { msg: opts.caption, attachments: absPaths },
+                const result = await sendFilesWithTimeout(
+                    getApi(),
+                    { caption: opts.caption, paths: absPaths },
                     threadId,
                     Number(opts.type),
                 );
-                output(result, program.opts().json, () => success(`File(s) sent to ${threadId}`));
+                output(result, program.opts().json, () => {
+                    success(`File(s) sent to ${threadId}`);
+                    if (result.captionError) warning(`Caption failed: ${result.captionError}`);
+                });
             } catch (e) {
                 error(e.message);
+                process.exit(1);
             }
         });
 
