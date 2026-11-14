@@ -7,6 +7,7 @@ import { appendFileSync, mkdirSync, existsSync } from "fs";
 import { resolve, join } from "path";
 import { getApi, autoLogin, clearSession } from "../core/zalo-client.js";
 import { success, error, info, warning } from "../utils/output.js";
+import { startControlServer } from "../utils/control-server.js";
 
 /** Thread types matching zca-js ThreadType enum */
 const THREAD_USER = 0;
@@ -44,6 +45,10 @@ export function registerListenCommand(program) {
         .option("--no-self", "Exclude self-sent messages")
         .option("--auto-accept", "Auto-accept incoming friend requests")
         .option("--save <dir>", "Save messages locally as JSONL files (one file per thread, e.g. --save ./zalo-logs)")
+        .option(
+            "--control-port <port>",
+            "Serve POST /send-file on 127.0.0.1:<port> so files send through this listener (needed for non-image files)",
+        )
         .action(async (opts) => {
             const jsonMode = program.opts().json;
             const startTime = Date.now();
@@ -263,7 +268,18 @@ export function registerListenCommand(program) {
             }
 
             // --- Initial start ---
+            let controlServer = null;
             try {
+                // Bind before starting the listener: a bad or busy port must fail without
+                // having opened a WebSocket session that kicks the account's other session.
+                if (opts.controlPort !== undefined) {
+                    const port = Number(opts.controlPort);
+                    if (!Number.isInteger(port) || port < 1 || port > 65535) {
+                        throw new Error(`Invalid --control-port: ${opts.controlPort} (expected 1-65535)`);
+                    }
+                    controlServer = await startControlServer(port, getApi);
+                }
+
                 const api = getApi();
                 attachAllHandlers(api);
                 api.listener.start({ retryOnClose: true });
@@ -275,6 +291,9 @@ export function registerListenCommand(program) {
                 if (opts.webhook) info(`Webhook: ${opts.webhook}`);
                 if (saveDir) info(`Save dir: ${saveDir} (JSONL per thread)`);
                 if (opts.autoAccept) info("Auto-accept friend requests: ON");
+                if (controlServer) {
+                    info(`Control endpoint: POST http://127.0.0.1:${controlServer.address().port}/send-file`);
+                }
             } catch (e) {
                 error(`Listen failed: ${e.message}`);
                 process.exit(1);
@@ -289,6 +308,7 @@ export function registerListenCommand(program) {
                     } catch (e) {
                         console.error(`[listen] Stop failed: ${e.message}`);
                     }
+                    controlServer?.close();
                     info(`Stopped. Uptime: ${uptime()}, events: ${eventCount}, reconnects: ${reconnectCount}`);
                     if (saveDir) info(`Messages saved to: ${saveDir}`);
                     resolve();
