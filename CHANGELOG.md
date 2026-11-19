@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **`listen` dropped which message a reply quotes** — message events now carry `replyTo` (`senderId`, `senderName`, `text`, `msgId` of the quoted message, or `null`), the same shape MCP history already returns, so a bot on `listen --json`, `--webhook` or `--save` knows what the user is answering.
 - **Windows: `npm view zalo-agent-cli version` cmd window on every launch** — the startup update check spawned `npm.cmd`, which opens a console that does not auto-close (#5). The check now hits the npm registry over HTTP (`fetch`), never `execSync("npm view")`, and is skipped entirely in MCP stdio / `--json` so Claude Desktop login no longer pops a window.
 - **MCP stdio: startup Auto-login / update banner could corrupt JSON-RPC** — `mcp start` passed `autoLogin(false)`, so the `● Auto-login` line went to the human output helpers. Combined with the `npm view` spawn this broke Claude Desktop's first frame (`Unexpected token '•'`) (#9). MCP now logs in silently, skips the update check, and keeps stdout for JSON-RPC only.
 - **Update nag when local is ahead of npm** — `1.7.0 !== 1.6.2` warned users to "update" to an older published version. Warn only when the registry version is strictly newer.

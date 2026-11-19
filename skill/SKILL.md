@@ -152,6 +152,7 @@ Full commands: `references/command-reference.md`
 ## Key Constraints
 - 1 WebSocket/account — `listen` and browser Zalo cannot coexist
 - `cliMsgId` required for: react, undo → get from `--json send` or `--json listen`
+- `listen` message events carry `replyTo` ({senderId, senderName, text, msgId} of the quoted message) or `null`
 - Mentions only in groups (`-t 1`)
 - QR login requires human scan — not automatable
 - 1 proxy per account recommended

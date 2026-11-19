@@ -8,6 +8,7 @@ import { resolve, join } from "path";
 import { getApi, autoLogin, clearSession } from "../core/zalo-client.js";
 import { success, error, info, warning } from "../utils/output.js";
 import { startControlServer } from "../utils/control-server.js";
+import { extractReplyTo } from "../mcp/message-normalize.js";
 
 /** Thread types matching zca-js ThreadType enum */
 const THREAD_USER = 0;
@@ -145,6 +146,7 @@ export function registerListenCommand(program) {
                             dName: msg.data.dName || null,
                             msgType,
                             content: rawContent,
+                            replyTo: extractReplyTo(msg),
                         };
                         const dir = msg.isSelf ? "→" : "←";
                         const typeLabel = msg.type === THREAD_USER ? "DM" : "GR";
